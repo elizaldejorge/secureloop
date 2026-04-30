@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2934" height="1650" viewBox="0 0 2934 1650" role="img" aria-labelledby="title desc">
+  <title id="title">SecureLoop enterprise product hero</title>
+  <desc id="desc">A restrained dashboard-style hero image for SecureLoop showing scan findings, an advisor panel, and a remediation queue.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7faf9"/>
+      <stop offset="1" stop-color="#edf3f2"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f5f8f7"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#243432" flood-opacity="0.16"/>
+    </filter>
+    <style>
+      .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+      .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+      .ink { fill: #14211f; }
+      .muted { fill: #657370; }
+      .faint { fill: #8b9895; }
+      .line { stroke: #d8e1df; stroke-width: 2; }
+      .panel { fill: #ffffff; stroke: #d8e1df; stroke-width: 2; }
+      .chip { fill: #eef6f4; stroke: #cde3de; stroke-width: 2; }
+      .teal { fill: #0f766e; }
+      .blue { fill: #2563eb; }
+      .amber { fill: #b45309; }
+      .red { fill: #b42318; }
+      .green { fill: #047857; }
+    </style>
+  </defs>
+
+  <rect width="2934" height="1650" fill="url(#bg)"/>
+  <rect x="132" y="128" width="2670" height="1394" rx="38" fill="#ffffff" opacity="0.52"/>
+
+  <g class="sans" transform="translate(220 210)">
+    <g>
+      <rect x="0" y="0" width="72" height="72" rx="18" fill="#0f766e"/>
+      <path d="M22 37 L34 49 L52 24" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="98" y="30" class="ink" font-size="34" font-weight="740">SecureLoop</text>
+      <text x="98" y="66" class="muted" font-size="23">Local AI security audit console</text>
+    </g>
+
+    <text x="0" y="185" class="ink" font-size="86" font-weight="760" letter-spacing="0">Find. Explain. Fix. Verify.</text>
+    <text x="0" y="252" class="muted" font-size="34">Six scanner signals, human-approved remediation, and verification evidence in one local console.</text>
+
+    <g transform="translate(0 324)">
+      <rect x="0" y="0" width="262" height="58" rx="29" class="chip"/>
+      <circle cx="34" cy="29" r="10" class="green"/>
+      <text x="58" y="38" class="ink" font-size="22" font-weight="650">127.0.0.1 only</text>
+      <rect x="288" y="0" width="270" height="58" rx="29" class="chip"/>
+      <circle cx="322" cy="29" r="10" class="blue"/>
+      <text x="346" y="38" class="ink" font-size="22" font-weight="650">Codex-assisted fixes</text>
+      <rect x="584" y="0" width="254" height="58" rx="29" class="chip"/>
+      <circle cx="618" cy="29" r="10" class="teal"/>
+      <text x="642" y="38" class="ink" font-size="22" font-weight="650">SARIF + reports</text>
+    </g>
+  </g>
+
+  <g transform="translate(220 650)" filter="url(#shadow)">
+    <rect x="0" y="0" width="2494" height="760" rx="30" fill="url(#screen)" stroke="#cdd8d5" stroke-width="2"/>
+    <rect x="0" y="0" width="2494" height="82" rx="30" fill="#f2f6f5"/>
+    <path d="M0 82 H2494" class="line"/>
+    <circle cx="44" cy="41" r="11" fill="#e06666"/>
+    <circle cx="82" cy="41" r="11" fill="#d5a62d"/>
+    <circle cx="120" cy="41" r="11" fill="#3aa76d"/>
+    <text x="174" y="50" class="mono muted" font-size="22">localhost:3334</text>
+
+    <g class="sans">
+      <rect x="0" y="82" width="330" height="678" fill="#172522"/>
+      <text x="38" y="152" fill="#ffffff" font-size="28" font-weight="720">SecureLoop</text>
+      <text x="38" y="190" fill="#a7b8b4" font-size="18">Admin console</text>
+
+      <g font-size="21" font-weight="620">
+        <rect x="26" y="238" width="278" height="54" rx="12" fill="#25423d"/>
+        <text x="54" y="273" fill="#ffffff">Overview</text>
+        <text x="54" y="342" fill="#a7b8b4">Guided Audit</text>
+        <text x="54" y="410" fill="#a7b8b4">Findings</text>
+        <text x="54" y="478" fill="#a7b8b4">Advisor</text>
+        <text x="54" y="546" fill="#a7b8b4">Reports</text>
+        <text x="54" y="614" fill="#a7b8b4">Settings</text>
+      </g>
+
+      <rect x="38" y="678" width="236" height="42" rx="21" fill="#0f766e"/>
+      <text x="62" y="706" fill="#ffffff" font-size="18" font-weight="680">Role: Admin</text>
+    </g>
+
+    <g class="sans" transform="translate(374 126)">
+      <text x="0" y="0" class="ink" font-size="39" font-weight="760">Guided audit</text>
+      <text x="0" y="40" class="muted" font-size="22">Intentional demo target · findings require review before changes</text>
+
+      <g transform="translate(0 86)">
+        <rect x="0" y="0" width="628" height="260" rx="18" class="panel"/>
+        <text x="28" y="47" class="ink" font-size="25" font-weight="720">Finding priority</text>
+        <rect x="28" y="78" width="570" height="44" rx="10" fill="#fff4ed"/>
+        <circle cx="54" cy="100" r="9" class="red"/>
+        <text x="78" y="108" class="ink" font-size="19" font-weight="650">Network-exposed command execution path</text>
+        <rect x="28" y="137" width="570" height="44" rx="10" fill="#fff8e8"/>
+        <circle cx="54" cy="159" r="9" class="amber"/>
+        <text x="78" y="167" class="ink" font-size="19" font-weight="650">Hardcoded credential pattern</text>
+        <rect x="28" y="196" width="570" height="44" rx="10" fill="#eef6f4"/>
+        <circle cx="54" cy="218" r="9" class="teal"/>
+        <text x="78" y="226" class="ink" font-size="19" font-weight="650">Missing hygiene entries in .gitignore</text>
+      </g>
+
+      <g transform="translate(666 0)">
+        <rect x="0" y="0" width="590" height="346" rx="18" class="panel"/>
+        <text x="28" y="47" class="ink" font-size="25" font-weight="720">Advisor</text>
+        <rect x="28" y="76" width="156" height="42" rx="21" fill="#172522"/>
+        <text x="54" y="104" fill="#ffffff" font-size="18" font-weight="650">Executive</text>
+        <rect x="196" y="76" width="142" height="42" rx="21" fill="#eef3f2"/>
+        <text x="224" y="104" class="muted" font-size="18" font-weight="650">Technical</text>
+        <text x="28" y="157" class="ink" font-size="21" font-weight="680">What matters now</text>
+        <text x="28" y="196" class="muted" font-size="19">Prioritize reachable execution paths, then</text>
+        <text x="28" y="225" class="muted" font-size="19">secrets and dependency drift. Fixes remain</text>
+        <text x="28" y="254" class="muted" font-size="19">human-approved and audit logged.</text>
+        <path d="M28 292 H542" class="line"/>
+        <text x="28" y="323" class="faint" font-size="17">Local brain decides · LLM wording is optional</text>
+      </g>
+
+      <g transform="translate(0 384)">
+        <rect x="0" y="0" width="1256" height="220" rx="18" class="panel"/>
+        <text x="28" y="47" class="ink" font-size="25" font-weight="720">Remediation queue</text>
+        <g transform="translate(28 78)">
+          <rect x="0" y="0" width="372" height="96" rx="14" fill="#f7faf9" stroke="#d8e1df" stroke-width="2"/>
+          <text x="24" y="35" class="ink" font-size="20" font-weight="700">Preview safe fixes</text>
+          <text x="24" y="67" class="muted" font-size="17">No disk write until approved</text>
+          <rect x="420" y="0" width="372" height="96" rx="14" fill="#f7faf9" stroke="#d8e1df" stroke-width="2"/>
+          <text x="444" y="35" class="ink" font-size="20" font-weight="700">Apply approved changes</text>
+          <text x="444" y="67" class="muted" font-size="17">Atomic file update path</text>
+          <rect x="840" y="0" width="360" height="96" rx="14" fill="#f7faf9" stroke="#d8e1df" stroke-width="2"/>
+          <text x="864" y="35" class="ink" font-size="20" font-weight="700">Rescan to verify</text>
+          <text x="864" y="67" class="muted" font-size="17">Evidence stays in SQLite</text>
+        </g>
+      </g>
+    </g>
+
+    <g class="sans" transform="translate(1704 126)">
+      <rect x="0" y="0" width="694" height="604" rx="22" fill="#172522"/>
+      <text x="36" y="58" fill="#ffffff" font-size="30" font-weight="740">Audit trail</text>
+      <text x="36" y="94" fill="#a7b8b4" font-size="19">Plain records for security review</text>
+
+      <g class="mono" font-size="18">
+        <rect x="36" y="136" width="622" height="74" rx="12" fill="#203631"/>
+        <text x="62" y="166" fill="#ffffff">scan.complete</text>
+        <text x="62" y="193" fill="#a7b8b4">target=demo-vulnerable-project</text>
+        <rect x="36" y="232" width="622" height="74" rx="12" fill="#203631"/>
+        <text x="62" y="262" fill="#ffffff">advisor.message</text>
+        <text x="62" y="289" fill="#a7b8b4">mode=technical · source=scan</text>
+        <rect x="36" y="328" width="622" height="74" rx="12" fill="#203631"/>
+        <text x="62" y="358" fill="#ffffff">patch.preview</text>
+        <text x="62" y="385" fill="#a7b8b4">human approval required</text>
+        <rect x="36" y="424" width="622" height="74" rx="12" fill="#203631"/>
+        <text x="62" y="454" fill="#ffffff">export.created</text>
+        <text x="62" y="481" fill="#a7b8b4">formats=json · sarif · html</text>
+      </g>
+
+      <rect x="36" y="536" width="216" height="42" rx="21" fill="#0f766e"/>
+      <text x="62" y="564" fill="#ffffff" font-size="18" font-weight="680">Local-first</text>
+    </g>
+  </g>
+</svg>

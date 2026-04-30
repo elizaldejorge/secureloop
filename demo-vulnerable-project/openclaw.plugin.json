@@ -1,0 +1,9 @@
+{
+  "name": "secureloop-demo-vulnerable-project",
+  "version": "0.1.0",
+  "permissions": [
+    "network",
+    "filesystem",
+    "shell"
+  ]
+}

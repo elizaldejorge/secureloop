@@ -1,0 +1,12 @@
+{
+  "name": "secureloop-demo-vulnerable-project",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Harmless vulnerable demo target for SecureLoop.",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "left-pad": "latest"
+  }
+}

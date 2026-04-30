@@ -1,0 +1,41 @@
+{
+  "name": "secureloop",
+  "version": "1.3.0",
+  "description": "🛡️ AI-powered cybersecurity audit software for OpenClaw skills, project folders, and local machine posture — scans for malware, secrets, CVEs, risky network exposure, suspicious permissions, and fixable hygiene gaps. Includes human-approved AI AutoFix, policy, dashboard, audit trail, and compliance reports.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node scripts/check-secrets.js && node --check index.js && node --check test.js && node --check scripts/check-secrets.js && node --check lib/audit.js && node --check lib/auth.js && node --check lib/env.js && node --check lib/policy.js && node --check lib/reports.js && node --check lib/settings.js && node --check lib/targets.js && node --check lib/enrichFindings.js && node --check lib/advisor/brain.js && node --check lib/autofix/providers/openai.js && node --check scanner/network.js && node --check scanner/system.js && node --check scanner/behavior.js && node --check dashboard/server.js && echo 'syntax ok'",
+    "start": "node dashboard/server.js",
+    "dashboard": "node dashboard/server.js",
+    "scan": "node index.js scan"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elizaldejorge/secureloop.git"
+  },
+  "keywords": [
+    "openclaw",
+    "security",
+    "cybersecurity",
+    "audit",
+    "malware",
+    "scanner",
+    "autofix",
+    "network-security",
+    "plugin",
+    "secureloop"
+  ],
+  "author": "Jorge Elizalde",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/elizaldejorge/secureloop/issues"
+  },
+  "homepage": "https://github.com/elizaldejorge/secureloop#readme",
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "chalk": "^5.6.2",
+    "express": "^5.2.1",
+    "open": "^11.0.0"
+  },
+  "type": "module"
+}

@@ -1,0 +1,2621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SecureLoop — Security Operations Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<script>
+  // FOUC-free theme bootstrap. Runs synchronously before stylesheet evaluates.
+  (function () {
+    try {
+      var t = localStorage.getItem("secureloop.theme");
+      if (t !== "light" && t !== "dark") t = "dark"; // default
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  })();
+</script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%232563eb'/><stop offset='1' stop-color='%230f766e'/></linearGradient></defs><rect width='32' height='32' rx='6' fill='url(%23g)'/><g transform='translate(4 4)' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2.5 L4.5 5 V11.5 C4.5 16.2 7.7 20 12 22 C16.3 20 19.5 16.2 19.5 11.5 V5 Z'/><path d='M15.2 12 A3.2 3.2 0 1 1 13 8.95'/><polyline points='15.5 8.5 15.5 11 13 11'/></g></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root,
+  :root[data-theme="dark"] {
+    --bg-0: #070a10;
+    --bg-1: #0f141c;
+    --bg-2: #161c26;
+    --bg-3: #1d2533;
+    --border: #232c3b;
+    --fg-0: #e6edf7;
+    --fg-1: #aab3c2;
+    --fg-2: #6a7485;
+    --accent: #3b82f6;
+    --accent-2: #60a5fa;
+    --ok: #22c55e;
+    --warn: #f59e0b;
+    --err: #ef4444;
+    --crit: #dc2626;
+    --pending: #a855f7;
+    --code-fg: #cbd5e1;
+    --nav-icon-bg: rgba(255,255,255,.02);
+    --radius: 8px;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+  :root[data-theme="light"] {
+    --bg-0: #f5f7fa;
+    --bg-1: #ffffff;
+    --bg-2: #eef2f7;
+    --bg-3: #e2e8f0;
+    --border: #d4dbe6;
+    --fg-0: #0f1623;
+    --fg-1: #4a5568;
+    --fg-2: #6b7280;
+    --accent: #2563eb;
+    --accent-2: #1d4ed8;
+    --ok: #15803d;
+    --warn: #b45309;
+    --err: #b91c1c;
+    --crit: #991b1b;
+    --pending: #7c3aed;
+    --code-fg: #1f2937;
+    --nav-icon-bg: rgba(0,0,0,.02);
+    --shadow: 0 1px 2px rgba(15,22,35,.06), 0 8px 24px rgba(15,22,35,.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg-0); color: var(--fg-0); margin: 0; font: 13px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { background: var(--bg-2); color: var(--code-fg); padding: 1px 5px; border-radius: 4px; font-size: 12px; font-family: ui-monospace, SF Mono, Menlo, Consolas, monospace; }
+  html, body, .card, .sidebar, button, input, select, textarea, .drawer, .auth-card { transition: background-color .15s ease, color .15s ease, border-color .15s ease; }
+  button, input, select, textarea {
+    font: inherit; color: inherit;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 10px;
+  }
+  button { cursor: pointer; transition: background .12s, border-color .12s; }
+  button:hover { background: var(--bg-3); border-color: #2e3a4f; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  button.primary:hover { background: #2563eb; border-color: #2563eb; }
+  button.danger  { background: var(--err); border-color: var(--err); color: white; }
+  button.danger:hover { background: #b91c1c; border-color: #b91c1c; }
+  button.ghost   { background: transparent; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  input, select, textarea { outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--bg-1); border-right: 1px solid var(--border); padding: 16px 12px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; padding: 4px 8px 14px; color: var(--fg-0); border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  .brand .logo { width: 30px; height: 30px; background: linear-gradient(135deg, #2563eb, #0f766e); border-radius: 6px; display: grid; place-items: center; font-size: 11px; font-weight: 800; letter-spacing: .04em; color: white; }
+  .brand small { display: block; font-weight: 400; color: var(--fg-2); font-size: 11px; }
+  nav { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+  nav button { text-align: left; background: transparent; border: 0; padding: 8px 10px; border-radius: 6px; color: var(--fg-1); font-size: 13px; display: flex; align-items: center; gap: 10px; }
+  nav button:hover { background: var(--bg-2); color: var(--fg-0); }
+  nav button.active { background: var(--bg-3); color: var(--fg-0); border-left: 2px solid var(--accent); padding-left: 8px; }
+  .nav-icon { width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 4px; display: inline-grid; place-items: center; font-size: 9px; color: var(--fg-2); background: var(--nav-icon-bg); flex: 0 0 auto; }
+  .nav-icon svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2; fill: none; }
+  nav .section { margin-top: 14px; padding: 4px 10px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-2); }
+
+  .main { padding: 18px 28px 40px; min-width: 0; }
+  header.pageheader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 16px; flex-wrap: wrap; }
+  header.pageheader h1 { font-size: 20px; margin: 0 0 4px; }
+  header.pageheader .sub { color: var(--fg-2); font-size: 12.5px; }
+  header.pageheader .tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .kpi { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .kpi .label { color: var(--fg-2); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; }
+  .kpi .val   { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .kpi .hint  { color: var(--fg-2); font-size: 11px; margin-top: 2px; }
+  .kpi.crit   .val { color: var(--crit); }
+  .kpi.warn   .val { color: var(--warn); }
+  .kpi.ok     .val { color: var(--ok); }
+  .kpi.info   .val { color: var(--accent-2); }
+
+  .home-layout { display: grid; grid-template-columns: minmax(360px, 1.25fr) minmax(300px, .75fr); gap: 14px; margin-bottom: 14px; }
+  .home-primary { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .home-primary h2 { margin: 0 0 6px; font-size: 18px; }
+  .home-primary p { color: var(--fg-2); margin: 0 0 14px; max-width: 680px; }
+  .home-scanbar { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 12px 0 10px; }
+  .home-scanbar input { min-width: 0; }
+  .scan-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .scan-options label { color: var(--fg-2); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .scan-options select { min-width: 130px; }
+  .scan-progress { display: none; margin-top: 14px; border: 1px solid var(--border); border-radius: 7px; background: rgba(0,0,0,.12); padding: 10px; }
+  .scan-progress.active { display: block; }
+  .scan-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .scan-step { border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--fg-2); background: rgba(255,255,255,.018); min-height: 54px; }
+  .scan-step strong { display: block; color: var(--fg-1); font-size: 12px; }
+  .scan-step.active { border-color: rgba(96,165,250,.5); color: var(--fg-0); background: rgba(59,130,246,.10); }
+  .scan-step.done { border-color: rgba(34,197,94,.35); color: var(--fg-1); }
+  .scan-step.done strong { color: #86efac; }
+  .home-status { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; align-content: start; }
+  .status-line { border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; background: rgba(255,255,255,.018); }
+  .status-line .label { color: var(--fg-2); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .status-line .value { font-weight: 700; margin-top: 3px; }
+  .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .action-card { background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01)); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; min-height: 138px; }
+  .action-card:hover { border-color: #334155; background: var(--bg-1); }
+  .action-card strong { font-size: 13px; }
+  .action-card span { color: var(--fg-2); font-size: 12px; min-height: 36px; }
+  .action-card .row { justify-content: flex-start; }
+  .mini-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  @media (max-width: 1200px) { .quick-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); } }
+  @media (max-width: 900px) { .home-layout { grid-template-columns: 1fr; } .home-scanbar { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .app { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; } .quick-grid { grid-template-columns: 1fr; } }
+  .quick-card { background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01)); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; min-height: 150px; }
+  .quick-card:hover { border-color: #334155; background: var(--bg-1); }
+  .quick-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .quick-icon { width: 34px; height: 34px; border-radius: 7px; display: grid; place-items: center; background: rgba(59,130,246,.12); border: 1px solid rgba(96,165,250,.25); color: #93c5fd; font-size: 11px; font-weight: 800; letter-spacing: .05em; }
+  .quick-title { font-weight: 700; font-size: 13px; }
+  .quick-copy { color: var(--fg-2); font-size: 12px; min-height: 36px; }
+  .quick-card button { width: fit-content; }
+  .tutorial-steps { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; }
+  .tutorial-step { border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px; background: rgba(255,255,255,.018); min-height: 78px; }
+  .tutorial-step strong { display: block; font-size: 12.5px; color: var(--fg-0); }
+  .tutorial-step span { display: block; color: var(--fg-2); font-size: 12px; margin-top: 3px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+  @media (max-width: 1100px) { .grid-2, .grid-3, .tutorial-steps { grid-template-columns: 1fr; } }
+  .card { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .card h2 { font-size: 14px; margin: 0 0 10px; color: var(--fg-1); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .card h2 .actions { display: flex; gap: 6px; }
+  .card h2 .actions button { font-size: 12px; padding: 4px 8px; }
+  .chart-wrap { height: 220px; position: relative; }
+
+  table.grid { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.grid th, table.grid td { text-align: left; border-bottom: 1px solid var(--border); padding: 7px 8px; vertical-align: top; }
+  table.grid th { color: var(--fg-2); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
+  table.grid tr:hover td { background: var(--bg-2); }
+  table.grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge.sev-critical { background: rgba(220,38,38,.15);  color: #fca5a5; border: 1px solid rgba(220,38,38,.35); }
+  .badge.sev-high     { background: rgba(239,68,68,.12);  color: #fca5a5; }
+  .badge.sev-medium   { background: rgba(245,158,11,.12); color: #fcd34d; }
+  .badge.sev-low      { background: rgba(59,130,246,.12); color: #93c5fd; }
+  .badge.st-pending   { background: rgba(168,85,247,.15); color: #c4b5fd; border: 1px solid rgba(168,85,247,.4); }
+  .badge.st-approved  { background: rgba(34,197,94,.15);  color: #86efac; }
+  .badge.st-rejected  { background: rgba(107,114,128,.15); color: #9ca3af; }
+  .badge.st-applied   { background: rgba(59,130,246,.15); color: #93c5fd; }
+  .badge.st-failed    { background: rgba(220,38,38,.18);  color: #fca5a5; }
+  .badge.lvl-DANGEROUS { background: rgba(220,38,38,.15);  color: #fca5a5; }
+  .badge.lvl-CAUTION   { background: rgba(245,158,11,.15); color: #fcd34d; }
+  .badge.lvl-SAFE      { background: rgba(34,197,94,.15);  color: #86efac; }
+
+  .filterbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+  .filterbar input, .filterbar select { min-width: 120px; }
+  .filterbar .spacer { flex: 1; }
+
+  .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; z-index: 40; }
+  .drawer-backdrop.open { display: block; }
+  .drawer { position: fixed; top: 0; right: 0; width: min(720px, 100%); height: 100vh; background: var(--bg-1); border-left: 1px solid var(--border); box-shadow: var(--shadow); z-index: 50; transform: translateX(100%); transition: transform .2s ease; display: flex; flex-direction: column; }
+  .drawer.open { transform: translateX(0); }
+  .drawer header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .drawer header h3 { margin: 0; font-size: 15px; }
+  .drawer .body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+  .drawer .foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; background: var(--bg-1); }
+  .scan-summary { display: grid; grid-template-columns: repeat(3, minmax(120px, 1fr)); gap: 10px; margin: 14px 0; }
+  .scan-box { border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; background: rgba(255,255,255,.02); }
+  .scan-box .label { color: var(--fg-2); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .scan-box .value { font-size: 18px; font-weight: 700; margin-top: 3px; }
+  .explain-panel { border: 1px solid var(--border); border-radius: 7px; background: rgba(255,255,255,.018); padding: 12px; margin: 12px 0; }
+  .explain-panel h4 { margin: 0 0 6px; font-size: 13px; color: var(--fg-0); }
+  .explain-panel p { margin: 0; color: var(--fg-1); font-size: 12.5px; }
+  .lane-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 8px; margin-top: 8px; }
+  .lane { border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px; background: var(--bg-2); }
+  .lane strong { display: block; font-size: 12.5px; }
+  .lane span { color: var(--fg-2); font-size: 12px; }
+  .lane .count { float: right; color: var(--fg-0); font-weight: 700; }
+  @media (max-width: 760px) { .scan-summary, .lane-grid { grid-template-columns: 1fr; } }
+
+  .copilot-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+  .chat-shell { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); min-height: 620px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+  .chat-head { border-bottom: 1px solid var(--border); padding: 12px 14px; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; background: linear-gradient(180deg, rgba(255,255,255,.028), rgba(255,255,255,0)); }
+  .chat-title { display: grid; gap: 5px; min-width: 0; }
+  .chat-title strong { font-size: 14px; }
+  .chat-sub { color: var(--fg-2); font-size: 12px; max-width: 680px; }
+  .chat-head-actions { display: flex; align-items: center; gap: 8px; }
+  .icon-btn { width: 30px; height: 30px; padding: 0; display: inline-grid; place-items: center; border-radius: 6px; color: var(--fg-1); }
+  .icon-btn:hover { color: var(--fg-0); }
+  .chat-mode { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,.16); flex-wrap: nowrap; }
+  .chat-mode button { border: 0; background: transparent; color: var(--fg-1); padding: 5px 9px; border-radius: 6px; }
+  .chat-mode button:hover { background: var(--bg-2); color: var(--fg-0); }
+  .chat-mode button.active { background: var(--accent); color: white; }
+  .chat-log { padding: 14px; overflow-y: auto; display: grid; gap: 10px; align-content: start; max-height: 520px; }
+  .chat-msg { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
+  .chat-msg.user { background: rgba(59,130,246,.10); border-color: rgba(96,165,250,.24); margin-left: 8%; }
+  .chat-msg.assistant { background: rgba(255,255,255,.022); margin-right: 8%; }
+  .chat-text { white-space: pre-wrap; }
+  .chat-md { white-space: normal; }
+  .chat-md p { margin: 0 0 10px; }
+  .chat-md p:last-child { margin-bottom: 0; }
+  .chat-md h4 { margin: 12px 0 6px; font-size: 12px; color: var(--fg-1); text-transform: uppercase; letter-spacing: .06em; }
+  .chat-md ul, .chat-md ol { margin: 6px 0 10px 20px; padding: 0; }
+  .chat-md li { margin: 3px 0; }
+  .chat-md strong { color: var(--fg-0); font-weight: 750; }
+  .chat-md code { font-size: 12px; }
+  .chat-engine { margin-top: 10px; color: var(--fg-2); font-size: 11.5px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 8px; }
+  .chat-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .chat-compose { border-top: 1px solid var(--border); padding: 12px; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; background: rgba(0,0,0,.12); }
+  .chat-compose textarea { resize: none; min-height: 46px; max-height: 140px; line-height: 1.45; }
+  .chat-compose-meta { grid-column: 1 / -1; color: var(--fg-2); font-size: 11px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .copilot-side { display: grid; gap: 12px; }
+  .prompt-list { display: grid; gap: 8px; }
+  .prompt-list button { text-align: left; }
+  @media (max-width: 980px) { .copilot-layout { grid-template-columns: 1fr; } .chat-msg.user, .chat-msg.assistant { margin-left: 0; margin-right: 0; } }
+  .advisor-fab { position: fixed; right: 20px; bottom: 20px; z-index: 60; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); border-color: var(--accent); color: white; box-shadow: var(--shadow); font-weight: 800; letter-spacing: .04em; }
+  .advisor-fab.nudge { animation: advisorNudge 1.2s ease-out 1; }
+  @keyframes advisorNudge {
+    0% { transform: scale(1); box-shadow: var(--shadow); }
+    25% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(59,130,246,.16), var(--shadow); }
+    55% { transform: scale(.98); box-shadow: 0 0 0 14px rgba(59,130,246,.06), var(--shadow); }
+    100% { transform: scale(1); box-shadow: var(--shadow); }
+  }
+  .advisor-window { position: fixed; right: 20px; bottom: 84px; width: min(460px, calc(100vw - 28px)); height: min(680px, calc(100vh - 110px)); z-index: 60; display: none; box-shadow: var(--shadow); }
+  .advisor-window.open { display: block; }
+  .advisor-window .chat-shell { min-height: 0; height: 100%; }
+  .advisor-window .chat-log { max-height: none; }
+  .advisor-window .chat-head { grid-template-columns: 1fr auto; }
+  .advisor-window .chat-mode { grid-column: 1 / -1; width: 100%; }
+  .advisor-window .chat-mode button { flex: 1; }
+  .advisor-window .chat-compose { grid-template-columns: 1fr auto; }
+  @media (max-width: 640px) {
+    .advisor-fab { right: 14px; bottom: 14px; }
+    .advisor-window { right: 14px; bottom: 76px; width: calc(100vw - 28px); height: calc(100vh - 92px); }
+  }
+
+  pre.diff { background: #0a0d12; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font-family: ui-monospace, SF Mono, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.45; white-space: pre; }
+  pre.diff .a { color: #86efac; }
+  pre.diff .d { color: #fca5a5; }
+  pre.diff .h { color: #93c5fd; }
+
+  .auth-overlay { position: fixed; inset: 0; background: rgba(7,10,16,.92); display: grid; place-items: center; z-index: 100; }
+  .auth-overlay.hidden { display: none; }
+  .auth-card { background: var(--bg-1); border: 1px solid var(--border); border-radius: 10px; padding: 22px 26px; min-width: 320px; box-shadow: var(--shadow); }
+  .auth-brand { display: flex; justify-content: center; margin-bottom: 14px; }
+  .auth-brand .logo-lg { width: 44px; height: 44px; border-radius: 9px; }
+  .auth-brand .logo-lg svg { width: 28px; height: 28px; }
+  .auth-card h2 { margin: 0 0 6px; font-size: 16px; text-align: center; }
+  .auth-card p  { text-align: center; }
+  .auth-card p  { color: var(--fg-2); margin: 0 0 14px; font-size: 12px; }
+  .auth-card input { width: 100%; margin-bottom: 10px; }
+
+  .toast-stack { position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
+  .toast { background: var(--bg-2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; box-shadow: var(--shadow); min-width: 260px; max-width: 420px; font-size: 12.5px; }
+  .toast.ok  { border-left-color: var(--ok); }
+  .toast.err { border-left-color: var(--err); }
+
+  .banner { background: linear-gradient(90deg, rgba(245,158,11,.15), rgba(245,158,11,.05)); border: 1px solid rgba(245,158,11,.3); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; color: #fcd34d; font-size: 12.5px; }
+
+  .muted { color: var(--fg-2); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .hidden { display: none !important; }
+  .empty-state { border: 1px dashed var(--border); border-radius: 8px; padding: 18px; color: var(--fg-2); background: rgba(255,255,255,.012); }
+  .empty-state strong { display: block; color: var(--fg-1); margin-bottom: 4px; }
+  .loop-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 14px; }
+  .loop-item { border: 1px solid var(--border); border-radius: 7px; padding: 10px; background: rgba(255,255,255,.018); }
+  .loop-item b { display: block; font-size: 12px; }
+  .loop-item span { color: var(--fg-2); font-size: 11.5px; }
+  @media (max-width: 900px) { .loop-strip, .scan-steps { grid-template-columns: 1fr 1fr; } }
+  .command-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.58); z-index: 180; display: none; align-items: flex-start; justify-content: center; padding-top: 12vh; }
+  .command-overlay.open { display: flex; }
+  .command-box { width: min(640px, calc(100vw - 28px)); background: var(--bg-1); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+  .command-box input { width: 100%; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 14px 16px; background: var(--bg-2); font-size: 15px; }
+  .command-list { padding: 8px; display: grid; gap: 4px; max-height: 360px; overflow-y: auto; }
+  .command-item { width: 100%; text-align: left; border: 0; background: transparent; padding: 10px 12px; display: grid; gap: 2px; }
+  .command-item:hover, .command-item.active { background: var(--bg-2); }
+  .command-item span { color: var(--fg-2); font-size: 12px; }
+
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; background: var(--bg-2); gap: 2px; }
+  .seg .seg-btn { background: transparent; border: 0; padding: 6px 14px; border-radius: 6px; color: var(--fg-1); font-size: 12.5px; cursor: pointer; }
+  .seg .seg-btn:hover { color: var(--fg-0); }
+  .seg .seg-btn.active { background: var(--bg-1); color: var(--fg-0); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .role-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; border: 1px solid var(--border); background: var(--bg-2); color: var(--fg-1); }
+  .role-badge.admin    { background: rgba(220,38,38,.10);  color: #f87171; border-color: rgba(220,38,38,.35); }
+  .role-badge.operator { background: rgba(59,130,246,.10); color: #60a5fa; border-color: rgba(59,130,246,.35); }
+  .role-badge.auditor  { background: rgba(168,85,247,.10); color: #c084fc; border-color: rgba(168,85,247,.35); }
+  .role-badge.viewer   { background: rgba(107,114,128,.10);color: #9ca3af; border-color: rgba(107,114,128,.35); }
+  :root[data-theme="light"] .role-badge.admin    { color: #b91c1c; }
+  :root[data-theme="light"] .role-badge.operator { color: #1d4ed8; }
+  :root[data-theme="light"] .role-badge.auditor  { color: #6d28d9; }
+  :root[data-theme="light"] .role-badge.viewer   { color: #4b5563; }
+
+  .policy-grid { display: grid; grid-template-columns: 200px 1fr; gap: 8px 14px; align-items: center; }
+  .policy-grid label { color: var(--fg-1); font-size: 12.5px; }
+  textarea { font-family: ui-monospace, SF Mono, Menlo, Consolas, monospace; font-size: 12.5px; width: 100%; min-height: 120px; resize: vertical; }
+
+  .view { min-height: 240px; }
+</style>
+</head>
+<body>
+
+<div class="auth-overlay" id="authOverlay" style="display:none">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="logo logo-lg" aria-label="SecureLoop logo" role="img">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M12 2.5 L4.5 5 V11.5 C4.5 16.2 7.7 20 12 22 C16.3 20 19.5 16.2 19.5 11.5 V5 Z"/>
+          <path d="M15.2 12 A3.2 3.2 0 1 1 13 8.95"/>
+          <polyline points="15.5 8.5 15.5 11 13 11"/>
+        </svg>
+      </span>
+    </div>
+    <h2>SecureLoop Console</h2>
+    <p id="authSub">Enter your dashboard PIN to continue.</p>
+    <input id="authPinInput" type="password" placeholder="PIN" autocomplete="current-password">
+    <input id="authLabelInput" type="text" placeholder="Label (e.g. jorge-laptop)" value="jorge" style="margin-bottom:14px">
+    <div class="row" style="justify-content:flex-end;gap:8px">
+      <button class="primary" id="authLoginBtn">Unlock</button>
+    </div>
+    <div id="authError" class="muted" style="margin-top:10px;font-size:12px"></div>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo" aria-label="SecureLoop logo" role="img">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M12 2.5 L4.5 5 V11.5 C4.5 16.2 7.7 20 12 22 C16.3 20 19.5 16.2 19.5 11.5 V5 Z"/>
+          <path d="M15.2 12 A3.2 3.2 0 1 1 13 8.95"/>
+          <polyline points="15.5 8.5 15.5 11 13 11"/>
+        </svg>
+      </span>
+      <div>
+        SecureLoop
+        <small>v1.3 · Cyber Audit Console</small>
+        <span class="role-badge" id="sidebarRoleBadge" style="margin-top:6px;display:none">role: viewer</span>
+      </div>
+    </div>
+    <nav id="nav">
+      <div class="section">Monitor</div>
+      <button data-view="home" class="active"><span class="nav-icon">HM</span>Home</button>
+      <button data-view="analytics"><span class="nav-icon">AN</span>Analytics</button>
+      <button data-view="advisor"><span class="nav-icon">AI</span>Advisor</button>
+      <button data-view="guide"><span class="nav-icon">GD</span>Guided Audit</button>
+      <button data-view="scans"><span class="nav-icon">SC</span>Scan History</button>
+      <button data-view="findings"><span class="nav-icon">FX</span>Findings Explorer</button>
+      <div class="section">Remediation</div>
+      <button data-view="autofix"><span class="nav-icon">FX</span>Fix History</button>
+      <button data-view="patches"><span class="nav-icon">AI</span>AI Review Patches</button>
+      <div class="section">Governance</div>
+      <button data-view="blocklist"><span class="nav-icon">BL</span>Blocklist</button>
+      <button data-view="whitelist"><span class="nav-icon">WL</span>Whitelist</button>
+      <button data-view="policy"><span class="nav-icon">PL</span>Policy</button>
+      <div class="section">Compliance</div>
+      <button data-view="audit"><span class="nav-icon">AL</span>Audit Log</button>
+      <button data-view="reports"><span class="nav-icon">EX</span>Reports & Export</button>
+      <div class="section">System</div>
+      <button data-view="settings"><span class="nav-icon">ST</span>Settings</button>
+    </nav>
+    <div style="margin-top:18px;padding:0 8px;font-size:11px;color:var(--fg-2)">
+      <div id="statusChip">● online · port 3334</div>
+      <div id="authChip" style="margin-top:4px">open mode</div>
+      <div style="margin-top:8px">
+        <label for="hostPicker" style="display:block;margin-bottom:3px;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-2)">Host</label>
+        <select id="hostPicker" style="width:100%;font-size:11.5px" title="Choose which SecureLoop host to manage">
+          <option value="local">this machine (local)</option>
+          <option value="" disabled>— Mesh hosts (v1.4) —</option>
+        </select>
+        <div class="muted" style="margin-top:4px;font-size:10.5px;line-height:1.35">
+          Multi-host fleet (audit any computer from anywhere via tunneled agent)
+          ships in v1.4 — see DECISION-047.
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <a href="#" id="logoutLink" style="display:none">Sign out</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="view" id="view-home">
+      <header class="pageheader">
+        <div>
+          <h1>Home</h1>
+          <div class="sub">Start an audit, open guided workflows, or jump into deeper operational views.</div>
+        </div>
+        <div class="tools">
+          <button id="commandOpenBtn" title="Command palette">Command</button>
+          <button id="homeRefresh" title="Refresh">↻</button>
+        </div>
+      </header>
+
+      <div id="firstRunBanner" class="banner hidden">
+        <b>No PIN configured.</b> The dashboard is currently open to any local user.
+        <a href="#" id="setPinLink">Set a PIN in Settings →</a>
+      </div>
+
+      <div class="loop-strip" aria-label="SecureLoop verified remediation loop">
+        <div class="loop-item"><b>1. Scan</b><span>Target, system, package, or model folder</span></div>
+        <div class="loop-item"><b>2. Explain</b><span>Plain-English and technical evidence</span></div>
+        <div class="loop-item"><b>3. Prioritize</b><span>Exploitability, confidence, impact</span></div>
+        <div class="loop-item"><b>4. Preview</b><span>Safe fixes and AI review patches</span></div>
+        <div class="loop-item"><b>5. Apply</b><span>Only explicit human-approved changes</span></div>
+        <div class="loop-item"><b>6. Verify</b><span>Rescan and prove what changed</span></div>
+      </div>
+
+      <div class="home-layout">
+        <div class="home-primary">
+          <h2>Run a Security Audit</h2>
+          <p>Scan a computer, project folder, software package, plugin, or AI model directory. SecureLoop explains findings in plain English and keeps technical evidence available when you need it.</p>
+          <div class="scan-options">
+            <label for="scanProfile">Profile</label>
+            <select id="scanProfile">
+              <option value="quick">Quick</option>
+              <option value="standard" selected>Standard</option>
+              <option value="deep">Deep</option>
+            </select>
+            <span class="muted" id="scanProfileHint">Balanced audit with code, dependency, permission, network, system, and attack-path checks.</span>
+          </div>
+          <div class="home-scanbar">
+            <input id="homeScanInput" placeholder="system, ./project, /path/to/folder, or skill name">
+            <button class="primary" id="homeScanBtn">Run Audit</button>
+          </div>
+          <div class="mini-actions" id="homeQuickTargets">
+            <button data-target="system">Computer</button>
+            <button data-fill=".">Current Project</button>
+            <button data-fill="~/Models/local-model">AI Model Folder</button>
+            <button data-view-jump="guide">Guided Audit</button>
+          </div>
+          <div class="scan-progress" id="scanProgress">
+            <div class="scan-steps">
+              <div class="scan-step" data-step="0"><strong>Resolve</strong><span>Target profile</span></div>
+              <div class="scan-step" data-step="1"><strong>Analyze</strong><span>Scanner lanes</span></div>
+              <div class="scan-step" data-step="2"><strong>Correlate</strong><span>Attack paths</span></div>
+              <div class="scan-step" data-step="3"><strong>Score</strong><span>Exploitability</span></div>
+              <div class="scan-step" data-step="4"><strong>Save</strong><span>Evidence record</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="home-status" id="homeStatus">
+          <div class="status-line">
+            <div class="label">Last audit</div>
+            <div class="value muted">Loading…</div>
+          </div>
+          <div class="status-line">
+            <div class="label">Open work</div>
+            <div class="value muted">Loading…</div>
+          </div>
+          <div class="status-line">
+            <div class="label">System</div>
+            <div class="value">Dashboard online · localhost only</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <div class="action-card">
+          <strong>Audit Targets</strong>
+          <span>Choose quick target types without thinking about scanner internals.</span>
+          <div class="row"><button data-view-jump="guide">Open Guided Audit</button></div>
+        </div>
+        <div class="action-card">
+          <strong>Risk Analytics</strong>
+          <span>View score trends, severity breakdowns, and recent audit activity.</span>
+          <div class="row"><button data-view-jump="analytics">Open Analytics</button></div>
+        </div>
+        <div class="action-card">
+          <strong>Findings Review</strong>
+          <span>Search technical evidence and open detailed scan explanations.</span>
+          <div class="row"><button data-view-jump="findings">Review Findings</button></div>
+        </div>
+        <div class="action-card">
+          <strong>Fix Workflow</strong>
+          <span>Preview safe fixes, inspect AI review patches, and verify with rescans.</span>
+          <div class="row"><button data-view-jump="autofix">Fix History</button><button data-view-jump="patches">AI Review</button></div>
+        </div>
+        <div class="action-card">
+          <strong>Reports</strong>
+          <span>Export scan history, audit logs, and compliance-ready HTML reports.</span>
+          <div class="row"><button data-view-jump="reports">Open Reports</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-advisor">
+      <header class="pageheader">
+        <div>
+          <h1>Advisor</h1>
+          <div class="sub">Ask SecureLoop about scans, risk, technical evidence, remediation, and reports.</div>
+        </div>
+      </header>
+      <div class="grid-2">
+        <div class="card">
+          <h2>SecureLoop Advisor</h2>
+          <p class="muted">Advisor is available from anywhere in the dashboard. Use it for intro guidance, tutorials, plain-English explanations, technical evidence, remediation priority, reports, and explicit scan starts.</p>
+          <div class="row"><button class="primary" id="advisorOpenFromPage">Open Advisor</button></div>
+        </div>
+        <div class="copilot-side">
+          <div class="card">
+            <h2>Quick Questions</h2>
+            <div class="prompt-list">
+              <button data-prompt="Explain the latest scan in simple terms">Explain latest scan simply</button>
+              <button data-prompt="Give me the technical evidence from the latest scan">Technical evidence</button>
+              <button data-prompt="What should I fix first?">Fix priority</button>
+              <button data-prompt="Open the best report for this scan">Best report</button>
+              <button data-prompt="Start the tutorial">Start tutorial</button>
+              <button data-prompt="scan system">Scan computer</button>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Action Safety</h2>
+            <p class="muted" style="margin:0">No execution: I’m not going to let free-form chat silently apply fixes or change policy. Advisor can explain, open reports, and prepare scans, but fix application, policy changes, deletion, approvals, and data sharing stay explicit and human-approved. SecureLoop supports local Ollama or OpenAI-backed Advisor interpretation through explicit environment settings.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-guide">
+      <header class="pageheader">
+        <div>
+          <h1>Guided Audit</h1>
+          <div class="sub">A complete audit cycle using a safe sample target with known issues.</div>
+        </div>
+        <div class="tools">
+          <button data-demo-reset="1">Reset Sample</button>
+          <button class="primary" data-demo="1">Start Guided Audit</button>
+        </div>
+      </header>
+
+      <div class="card" style="margin-bottom:14px">
+        <h2>Guided Audit</h2>
+        <div class="muted">SecureLoop walks through a complete audit cycle: scan, explain, preview safe fixes, apply approved changes, and verify with a follow-up scan.</div>
+        <div class="tutorial-steps">
+          <div class="tutorial-step"><strong>1. Scan target</strong><span>Loads a safe sample project with known issues.</span></div>
+          <div class="tutorial-step"><strong>2. Read summary</strong><span>Open Details for nontechnical and technical views.</span></div>
+          <div class="tutorial-step"><strong>3. Preview fixes</strong><span>Shows safe changes before writing.</span></div>
+          <div class="tutorial-step"><strong>4. Apply safe fixes</strong><span>Only deterministic fixes write to disk.</span></div>
+          <div class="tutorial-step"><strong>5. Rescan</strong><span>SecureLoop proves what changed.</span></div>
+        </div>
+      </div>
+
+      <div class="quick-grid" id="guidedTargets">
+        <div class="quick-card">
+          <div class="quick-top"><div><div class="quick-title">Sample Project</div><div class="quick-copy">Safe local target with known issues across code, dependencies, permissions, and network exposure.</div></div><div class="quick-icon">LAB</div></div>
+          <button class="primary" data-demo="1">Audit Sample</button>
+        </div>
+        <div class="quick-card">
+          <div class="quick-top"><div><div class="quick-title">Reset Sample</div><div class="quick-copy">Restore the sample target after applying safe fixes.</div></div><div class="quick-icon">RST</div></div>
+          <button data-demo-reset="1">Reset</button>
+        </div>
+        <div class="quick-card">
+          <div class="quick-top"><div><div class="quick-title">Scan History</div><div class="quick-copy">Open the latest sample run and inspect the explanation drawer.</div></div><div class="quick-icon">SC</div></div>
+          <button data-view-jump="scans">Open Scans</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-analytics">
+      <header class="pageheader">
+        <div>
+          <h1>Risk Analytics</h1>
+          <div class="sub">Posture metrics, trends, and recent activity for deeper review.</div>
+        </div>
+        <div class="tools">
+          <button id="analyticsRefresh" title="Refresh">↻</button>
+        </div>
+      </header>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h2>Risk Score Timeline (last 30 scans)
+            <span class="actions"><button id="timelineRefresh">↻</button></span>
+          </h2>
+          <div class="chart-wrap"><canvas id="timelineChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h2>Findings by Severity (last 20 scans)</h2>
+          <div class="chart-wrap"><canvas id="severityChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h2>Recent Scans <span class="actions"><button id="goToScans">View all →</button></span></h2>
+        <table class="grid" id="recentScansTable">
+          <thead><tr><th>Target</th><th>Score</th><th>Level</th><th>When</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-scans">
+      <header class="pageheader">
+        <div>
+          <h1>Scan History</h1>
+          <div class="sub">Every scan that ever ran on this machine.</div>
+        </div>
+      </header>
+      <div class="filterbar">
+        <input id="scansQ" placeholder="Search target or finding text…">
+        <select id="scansLevel">
+          <option value="">All levels</option>
+          <option value="DANGEROUS">Dangerous</option>
+          <option value="CAUTION">Caution</option>
+          <option value="SAFE">Safe</option>
+        </select>
+        <input id="scansSince" type="date" title="Since">
+        <input id="scansUntil" type="date" title="Until">
+        <button class="primary" id="scansApply">Apply</button>
+        <button id="scansClear">Clear</button>
+        <span class="spacer"></span>
+        <button id="scansExportCsv">Export CSV</button>
+        <button id="scansExportJson">Export JSON</button>
+      </div>
+      <div class="card">
+        <table class="grid" id="scansTable">
+          <thead><tr><th>ID</th><th>Target</th><th>Score</th><th>Level</th><th>When</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <div class="muted" id="scansPagerInfo"></div>
+          <div class="row">
+            <button id="scansPrev">← Prev</button>
+            <button id="scansNext">Next →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-findings">
+      <header class="pageheader">
+        <div>
+          <h1>Findings Explorer</h1>
+          <div class="sub">Drill into the latest scans for any audited target.</div>
+        </div>
+      </header>
+      <div class="filterbar">
+        <input id="findSkill" placeholder="skill, path, or system">
+        <button class="primary" id="findLoad">Load findings</button>
+      </div>
+      <div class="card" id="findContainer">
+        <div class="muted">Enter a target to see findings.</div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-autofix">
+      <header class="pageheader">
+        <div>
+          <h1>Fix History</h1>
+          <div class="sub">History of previews, safe fixes, AI-reviewed patches, and manual-review items.</div>
+        </div>
+        <div class="tools">
+          <input id="autofixSkillInput" placeholder="skill or folder path">
+          <button id="autofixDryRunBtn">Preview Fixes</button>
+          <button class="primary" id="autofixApplyBtn">Apply Safe Fixes</button>
+        </div>
+      </header>
+      <div class="card">
+        <table class="grid" id="autofixTable">
+          <thead><tr><th>ID</th><th>Target</th><th>Mode</th><th>Safe fixes</th><th>AI review</th><th>Manual review</th><th>When</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-patches">
+      <header class="pageheader">
+        <div>
+          <h1>AI Review Patches</h1>
+          <div class="sub">AI-drafted patches awaiting human review. Nothing is ever auto-applied.</div>
+        </div>
+        <div class="tools">
+          <input id="patchProposeSkill" placeholder="skill or folder path">
+          <button class="primary" id="patchProposeBtn">Propose Patch</button>
+        </div>
+      </header>
+      <div class="filterbar">
+        <select id="patchStatus">
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="applied">Applied</option>
+          <option value="rejected">Rejected</option>
+          <option value="failed">Failed</option>
+          <option value="">All</option>
+        </select>
+        <input id="patchSkill" placeholder="Filter by skill…">
+        <button id="patchApply">Apply filter</button>
+        <span class="spacer"></span>
+        <button id="patchExportCsv">Export CSV</button>
+      </div>
+      <div class="card">
+        <table class="grid" id="patchTable">
+          <thead><tr><th>ID</th><th>Target</th><th>File:Line</th><th>Conf.</th><th>Reason</th><th>Status</th><th>When</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-blocklist">
+      <header class="pageheader">
+        <div>
+          <h1>Blocklist</h1>
+          <div class="sub">Skills that are always refused, scan-free.</div>
+        </div>
+        <div class="tools">
+          <input id="blockSkillInput" placeholder="skill-name">
+          <input id="blockReasonInput" placeholder="reason (optional)">
+          <button class="danger" id="blockAddBtn">Add</button>
+        </div>
+      </header>
+      <div class="card">
+        <table class="grid" id="blocklistTable"><thead><tr><th>Skill</th><th>Reason</th><th>Blocked at</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-whitelist">
+      <header class="pageheader">
+        <div>
+          <h1>Whitelist</h1>
+          <div class="sub">Trusted skills — scans are skipped.</div>
+        </div>
+        <div class="tools">
+          <input id="whiteSkillInput" placeholder="skill-name">
+          <button class="primary" id="whiteAddBtn">Add</button>
+        </div>
+      </header>
+      <div class="card">
+        <table class="grid" id="whitelistTable"><thead><tr><th>Skill</th><th>Added at</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-policy">
+      <header class="pageheader">
+        <div>
+          <h1>Security Policy</h1>
+          <div class="sub">Thresholds, severity weights, and custom detection rules. Versioned.</div>
+        </div>
+        <div class="tools">
+          <button id="policySave" class="primary">💾 Save as new version</button>
+          <button id="policyRefresh">↻ Reload</button>
+        </div>
+      </header>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>Active Policy (v<span id="policyVersion">?</span>)</h2>
+          <div class="policy-grid">
+            <label>Critical cutoff</label>  <input id="polCriticalCutoff" type="number" min="1" max="100">
+            <label>Caution cutoff</label>   <input id="polCautionCutoff"  type="number" min="0" max="100">
+            <label>Auto-block ≥</label>     <input id="polAutoBlock" type="number" min="1" max="100" placeholder="empty = disabled">
+            <label>AI review enabled</label><select id="polTier2Enabled"><option value="true">true</option><option value="false">false</option></select>
+            <label>AI review model</label>  <input id="polTier2Model" type="text">
+            <label>Max patches/run</label>  <input id="polTier2Max" type="number" min="0" max="500">
+          </div>
+          <hr>
+          <h2 style="font-size:13px">Severity weights (risk calc)</h2>
+          <div class="policy-grid">
+            <label>Critical</label> <input id="polSevCritical" type="number" min="0" max="100">
+            <label>High</label>     <input id="polSevHigh"     type="number" min="0" max="100">
+            <label>Medium</label>   <input id="polSevMedium"   type="number" min="0" max="100">
+            <label>Low</label>      <input id="polSevLow"      type="number" min="0" max="100">
+          </div>
+          <hr>
+          <h2 style="font-size:13px">Retention (days)</h2>
+          <div class="policy-grid">
+            <label>Scans</label>    <input id="polRetScans"   type="number" min="1" max="3650">
+            <label>Audit</label>    <input id="polRetAudit"   type="number" min="1" max="3650">
+            <label>Patches</label>  <input id="polRetPatches" type="number" min="1" max="3650">
+          </div>
+          <hr>
+          <label><b>Require manual approval for</b> (comma-separated categories)</label>
+          <input id="polRequireManual" type="text" style="width:100%" placeholder="e.g. dangerous-code, obfuscation">
+          <hr>
+          <label><b>Custom secret patterns</b> (JSON array of <code>{name, pattern, description}</code>)</label>
+          <textarea id="polCustomSecrets" placeholder='[{"name":"acme-token","pattern":"ACME_[A-Z0-9]{32}","description":"Acme Corp"}]'></textarea>
+          <hr>
+          <label><b>Notes for this version (optional)</b></label>
+          <input id="polNotes" type="text" style="width:100%" placeholder="Why this change?">
+        </div>
+
+        <div class="card">
+          <h2>Version History</h2>
+          <table class="grid" id="policyVersionsTable">
+            <thead><tr><th>v</th><th>Author</th><th>Notes</th><th>When</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-audit">
+      <header class="pageheader">
+        <div>
+          <h1>Audit Log</h1>
+          <div class="sub">Every authenticated action. Append-only.</div>
+        </div>
+      </header>
+      <div class="filterbar">
+        <input id="auditActor"  placeholder="actor">
+        <input id="auditAction" placeholder="action">
+        <input id="auditTarget" placeholder="target">
+        <input id="auditSince" type="date">
+        <input id="auditUntil" type="date">
+        <button class="primary" id="auditApply">Apply</button>
+        <span class="spacer"></span>
+        <button id="auditExportCsv">Export CSV</button>
+        <button id="auditExportJson">Export JSON</button>
+      </div>
+      <div class="card">
+        <table class="grid" id="auditTable">
+          <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>IP</th><th>Meta</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <div class="muted" id="auditPagerInfo"></div>
+          <div class="row">
+            <button id="auditPrev">← Prev</button>
+            <button id="auditNext">Next →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-reports">
+      <header class="pageheader">
+        <div>
+          <h1>Reports & Export</h1>
+          <div class="sub">Compliance-ready exports for auditors and reviewers.</div>
+        </div>
+      </header>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Compliance Report</h2>
+          <p class="muted" style="margin:0 0 10px">Generates a print-ready HTML document. Save as PDF from your browser's print dialog.</p>
+          <div class="policy-grid">
+            <label>Since</label> <input id="repSince" type="date">
+            <label>Until</label> <input id="repUntil" type="date">
+            <label>Title</label> <input id="repTitle" type="text" placeholder="SecureLoop Security Compliance Report">
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="primary" id="repOpen">📄 Open Report</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Scan Report</h2>
+          <p class="muted" style="margin:0 0 10px">Open a print-ready report for the latest scan with plain-English impact, technical evidence, exploitability, and verification context.</p>
+          <div class="row">
+            <button class="primary" id="scanReportLatest">Latest Scan Report</button>
+            <button id="scanReportSarif">Latest SARIF</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Bulk Export</h2>
+          <p class="muted" style="margin:0 0 10px">Download CSV or JSON snapshots.</p>
+          <div class="row">
+            <button id="expScansCsv">Scans CSV</button>
+            <button id="expScansJson">Scans JSON</button>
+            <button id="expSarif">Latest SARIF</button>
+            <button id="expPatchesCsv">Patches CSV</button>
+            <button id="expAuditCsv">Audit CSV</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-settings">
+      <header class="pageheader">
+        <div>
+          <h1>Settings</h1>
+          <div class="sub">Theme, authentication, roles, AI provider, notifications, retention.</div>
+        </div>
+        <div class="row">
+          <span class="role-badge" id="meRoleBadge" title="Your current role">role: …</span>
+        </div>
+      </header>
+      <div class="grid-2">
+        <div class="card" id="card-theme">
+          <h2>Theme</h2>
+          <p class="muted" style="margin:0 0 12px">Light or Dark interface. Saved on this device.</p>
+          <div class="seg" id="themeToggle" role="group" aria-label="Theme">
+            <button data-theme-set="dark"  class="seg-btn">🌙 Dark</button>
+            <button data-theme-set="light" class="seg-btn">☀ Light</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Dashboard PIN</h2>
+          <p class="muted" id="pinState">Loading…</p>
+          <div class="row">
+            <input id="pinNew" type="password" placeholder="new PIN (4–64 chars)">
+            <button class="primary" id="pinSetBtn">Set PIN</button>
+            <button class="danger"  id="pinClearBtn">Clear PIN</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Active Sessions</h2>
+          <table class="grid" id="sessionsTable">
+            <thead><tr><th>ID</th><th>Label</th><th>Role</th><th>IP</th><th>Last seen</th><th>Expires</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>AI Provider Health</h2>
+          <div id="providerHealth" class="empty-state"><strong>Loading provider status</strong>Checking local configuration.</div>
+        </div>
+      </div>
+
+      <!-- Roles & Access ---------------------------------------------------- -->
+      <div class="card" style="margin-top:14px" id="card-roles">
+        <h2>Roles &amp; Access</h2>
+        <p class="muted" style="margin:0 0 10px">
+          Four-tier RBAC. Master PIN logs you in as <span class="role-badge admin">Admin</span>.
+          Admins issue scoped tokens for lower roles — share a token instead of the PIN.
+          Tokens are time-bound and shown <strong>once</strong>.
+        </p>
+        <table class="grid" style="margin-bottom:14px">
+          <thead><tr><th>Role</th><th>Capabilities</th></tr></thead>
+          <tbody>
+            <tr><td><span class="role-badge admin">Admin</span></td>
+                <td>Manage PIN, mint/revoke role tokens, edit policy, manage block/whitelist, apply autofix.</td></tr>
+            <tr><td><span class="role-badge operator">Operator</span></td>
+                <td>Run scans, propose patches, apply approved autofixes. Cannot manage roles or change policy.</td></tr>
+            <tr><td><span class="role-badge auditor">Auditor</span></td>
+                <td>Read everything, run scans, export reports (CSV / JSON / SARIF / HTML). No fix application.</td></tr>
+            <tr><td><span class="role-badge viewer">Viewer</span></td>
+                <td>Read-only: scans, findings, patches, audit log, reports. Cannot trigger any action.</td></tr>
+          </tbody>
+        </table>
+        <h3 style="margin:6px 0 8px;font-size:13px">Issue a delegated token</h3>
+        <div class="row">
+          <select id="delegateRole">
+            <option value="operator">Operator</option>
+            <option value="auditor" selected>Auditor</option>
+            <option value="viewer">Viewer</option>
+          </select>
+          <input id="delegateLabel" type="text" placeholder="Label (e.g. soc-team-readonly)" maxlength="80">
+          <input id="delegateTtl"   type="number" min="1" max="720" value="24" style="width:90px" title="TTL in hours">
+          <button class="primary" id="delegateBtn">Issue token</button>
+        </div>
+        <div id="delegateResult" class="empty-state hidden" style="margin-top:12px"></div>
+      </div>
+
+      <!-- Notifications ----------------------------------------------------- -->
+      <div class="card" style="margin-top:14px" id="card-notifications">
+        <h2>Notifications &amp; Webhooks</h2>
+        <p class="muted" style="margin:0 0 10px">
+          Fire a webhook (Slack, Teams, or generic JSON) when a scan produces findings at or above your chosen severity.
+          Local-first — no Anthropic/OpenAI proxy involved.
+        </p>
+        <div class="policy-grid">
+          <label for="ntfEnabled">Enabled</label>
+          <div class="row"><input type="checkbox" id="ntfEnabled"> <span class="muted">Disabled by default. Off-by-default for offline use.</span></div>
+
+          <label for="ntfKind">Format</label>
+          <select id="ntfKind">
+            <option value="generic">Generic JSON</option>
+            <option value="slack">Slack incoming-webhook</option>
+            <option value="teams">Microsoft Teams</option>
+          </select>
+
+          <label for="ntfMin">Min severity</label>
+          <select id="ntfMin">
+            <option value="critical">Critical only</option>
+            <option value="high" selected>High and above</option>
+            <option value="medium">Medium and above</option>
+            <option value="low">Low and above</option>
+          </select>
+
+          <label for="ntfUrl">Webhook URL</label>
+          <input id="ntfUrl" type="url" placeholder="https://hooks.slack.com/services/...">
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="primary" id="ntfSave">Save</button>
+          <button id="ntfTest">Send test ping</button>
+          <span class="muted" id="ntfStatus"></span>
+        </div>
+      </div>
+
+      <!-- AI Provider ------------------------------------------------------- -->
+      <div class="card" style="margin-top:14px" id="card-ai">
+        <h2>AI Provider</h2>
+        <p class="muted" style="margin:0 0 10px">
+          The deterministic Brain runs every scan. The LLM only adds <em>polish</em> on top — never silent fixes.
+          Configure a remote model (OpenAI) or a fully-local model (Ollama). Local-only is the default.
+        </p>
+        <div class="policy-grid">
+          <label for="aiProvider">Provider</label>
+          <select id="aiProvider">
+            <option value="auto">Auto (use OpenAI if key, else local)</option>
+            <option value="local">Local Brain only — no LLM</option>
+            <option value="openai">OpenAI (cloud, requires key)</option>
+            <option value="ollama">Ollama (fully local LLM)</option>
+          </select>
+
+          <label for="aiOpenAiKey">OpenAI API key</label>
+          <input id="aiOpenAiKey" type="password" placeholder="leave blank to keep current" autocomplete="off">
+
+          <label for="aiOpenAiModel">OpenAI model</label>
+          <input id="aiOpenAiModel" type="text" placeholder="gpt-5.3-codex">
+
+          <label for="aiOllamaUrl">Ollama URL</label>
+          <input id="aiOllamaUrl" type="url" placeholder="http://127.0.0.1:11434/api/chat">
+
+          <label for="aiOllamaModel">Ollama model</label>
+          <input id="aiOllamaModel" type="text" placeholder="llama3.1:8b">
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="primary" id="aiSave">Save</button>
+          <button id="aiTest">Test connection</button>
+          <span class="muted" id="aiStatus"></span>
+        </div>
+      </div>
+
+      <!-- Data Retention & Export ------------------------------------------- -->
+      <div class="card" style="margin-top:14px" id="card-retention">
+        <h2>Data Retention &amp; Export</h2>
+        <p class="muted" style="margin:0 0 10px">
+          All scan history, audit log entries, and patches live in <code>db/secureloop.db</code>.
+          Adjust day-based retention in <a href="#" data-view-link="policy">Policy → retention.*</a>.
+          Export everything for offline backup or external SIEM ingest.
+        </p>
+        <div class="row">
+          <button class="primary" id="exportAllBtn">Export all data (JSON bundle)</button>
+          <a href="#" data-view-link="reports">Open Reports &amp; Export →</a>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h2>Environment</h2>
+        <table class="grid">
+          <tbody>
+            <tr><th>Dashboard</th><td><code>http://localhost:3334</code> (127.0.0.1-only)</td></tr>
+            <tr><th>AI review provider</th><td>OpenAI via <code>OPENAI_API_KEY</code> (override above)</td></tr>
+            <tr><th>Version</th><td><code id="envVersion">1.3.0</code></td></tr>
+            <tr><th>Data retention</th><td>Controlled by Policy → retention.*</td></tr>
+            <tr><th>Local-first</th><td>All data stays on this machine. No telemetry.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<button class="advisor-fab" id="advisorFab" title="Open SecureLoop Advisor">AI</button>
+<section class="advisor-window" id="advisorWindow" aria-hidden="true">
+  <div class="chat-shell">
+    <div class="chat-head">
+      <div class="chat-title">
+        <strong>SecureLoop Advisor</strong>
+        <div class="chat-sub">Scan-aware assistant with gated actions. Local Brain plus optional OpenAI or Ollama interpretation. No execution: free-form chat will not silently apply fixes or change policy.</div>
+      </div>
+      <div class="chat-head-actions">
+        <button class="ghost icon-btn" id="advisorClose" aria-label="Close Advisor" title="Close Advisor">×</button>
+      </div>
+      <div class="chat-mode" id="copilotModes">
+        <button data-mode="executive" class="active">Executive</button>
+        <button data-mode="technical">Technical</button>
+        <button data-mode="remediation">Remediation</button>
+      </div>
+    </div>
+    <div class="chat-log" id="copilotLog"></div>
+    <div class="chat-compose">
+      <textarea id="copilotInput" placeholder="Ask about the latest scan, technical evidence, fixes, reports, tutorial, or type: scan system"></textarea>
+      <button class="primary" id="copilotSend">Send</button>
+      <div class="chat-compose-meta"><span>Enter to send · Shift+Enter for a new line</span><span>No silent fixes or policy changes</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <header>
+    <h3 id="drawerTitle">Details</h3>
+    <button class="ghost" id="drawerClose">✕</button>
+  </header>
+  <div class="body" id="drawerBody"></div>
+  <div class="foot" id="drawerFoot"></div>
+</aside>
+
+<div class="toast-stack" id="toasts"></div>
+
+<div class="command-overlay" id="commandOverlay" aria-hidden="true">
+  <div class="command-box" role="dialog" aria-label="Command palette">
+    <input id="commandInput" placeholder="Search commands, pages, scans, reports, or Advisor...">
+    <div class="command-list" id="commandList"></div>
+  </div>
+</div>
+
+<script>
+const S = {
+  token: localStorage.getItem("secureloop_token") || null,
+  pinConfigured: false,
+  policy: null,
+  view: "home",
+  scansPage: { offset: 0, limit: 25, total: 0, filters: {} },
+  auditPage: { offset: 0, limit: 50, total: 0, filters: {} },
+  copilotMode: "executive",
+  copilotBusy: false,
+  latestScanId: null,
+  commandIndex: [],
+  me: null, // { role, label, expiresAt, authMode } once /api/auth/me resolves
+};
+
+function toast(msg, kind) {
+  const el = document.createElement("div");
+  el.className = "toast " + (kind || "");
+  el.textContent = msg;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+function installNavIcons() {
+  const icons = {
+    home: "M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5",
+    analytics: "M4 19V5M4 19h17M8 16v-5M13 16V7M18 16v-9",
+    advisor: "M4 5h16v11H8l-4 4V5z",
+    guide: "M5 4h14v16H5zM8 8h8M8 12h8M8 16h5",
+    scans: "M4 6h16M4 12h16M4 18h16",
+    findings: "M12 3v18M3 12h18M5 5l14 14M19 5 5 19",
+    autofix: "M14 3 4 14h7l-1 7 10-12h-7l1-6z",
+    patches: "M7 3h7l5 5v13H7zM14 3v6h6M9 14h8M9 18h5",
+    blocklist: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM6 18 18 6",
+    whitelist: "M20 6 9 17l-5-5",
+    policy: "M12 3 20 7v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z",
+    audit: "M5 4h14v16H5zM8 8h8M8 12h8M8 16h4",
+    reports: "M6 3h9l3 3v15H6zM9 13h6M9 17h6M15 3v4h4",
+    settings: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 12h3M17 12h3M12 4v3M12 17v3",
+  };
+  document.querySelectorAll("#nav button[data-view]").forEach((btn) => {
+    const span = btn.querySelector(".nav-icon");
+    const path = icons[btn.dataset.view];
+    if (span && path) span.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
+  });
+}
+installNavIcons();
+
+async function api(path, opts) {
+  opts = opts || {};
+  const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+  if (S.token) headers["Authorization"] = "Bearer " + S.token;
+  const r = await fetch(path, Object.assign({}, opts, { headers }));
+  if (r.status === 401) {
+    S.token = null; localStorage.removeItem("secureloop_token");
+    showAuthOverlay("Your session expired. Please unlock the dashboard.");
+    throw new Error("Unauthorized");
+  }
+  const ct = r.headers.get("content-type") || "";
+  const body = ct.includes("application/json") ? await r.json() : await r.text();
+  if (!r.ok) throw new Error((body && body.error) || r.statusText);
+  return body;
+}
+
+function showAuthOverlay(msg) {
+  document.getElementById("authOverlay").style.display = "grid";
+  document.getElementById("authError").textContent = msg || "";
+  setTimeout(() => document.getElementById("authPinInput").focus(), 20);
+}
+function hideAuthOverlay() { document.getElementById("authOverlay").style.display = "none"; }
+
+async function bootAuth() {
+  const s = await api("/api/auth/status");
+  S.pinConfigured = !!s.pinConfigured;
+  if (!S.pinConfigured) {
+    hideAuthOverlay();
+    document.getElementById("firstRunBanner").classList.remove("hidden");
+    document.getElementById("authChip").textContent = "open mode (no PIN)";
+    try { S.me = await api("/api/auth/me"); } catch { S.me = { role: "admin", label: null }; }
+    applyRoleGating();
+    return;
+  }
+  if (!S.token) { showAuthOverlay(); return; }
+  try { await api("/api/status"); hideAuthOverlay(); } catch {}
+  document.getElementById("authChip").textContent = "session · " + (S.token || "").slice(0, 8);
+  document.getElementById("logoutLink").style.display = "";
+  try { S.me = await api("/api/auth/me"); } catch { S.me = null; }
+  applyRoleGating();
+}
+
+document.getElementById("authLoginBtn").addEventListener("click", async () => {
+  const pin = document.getElementById("authPinInput").value;
+  const label = document.getElementById("authLabelInput").value || "dashboard";
+  try {
+    const r = await fetch("/api/auth/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin, label }),
+    });
+    const j = await r.json();
+    if (!r.ok) { document.getElementById("authError").textContent = j.error || "Login failed"; return; }
+    S.token = j.token; localStorage.setItem("secureloop_token", j.token);
+    hideAuthOverlay();
+    document.getElementById("authChip").textContent = "🔒 session · " + j.token.slice(0, 8);
+    document.getElementById("logoutLink").style.display = "";
+    toast("Signed in", "ok");
+    loadCurrentView();
+  } catch (e) {
+    document.getElementById("authError").textContent = e.message;
+  }
+});
+document.getElementById("authPinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("authLoginBtn").click(); });
+document.getElementById("logoutLink").addEventListener("click", async (e) => {
+  e.preventDefault();
+  try { await api("/api/auth/logout", { method: "POST" }); } catch {}
+  S.token = null; localStorage.removeItem("secureloop_token");
+  showAuthOverlay("Signed out.");
+});
+
+document.getElementById("nav").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  const v = b.dataset.view; if (!v) return;
+  showView(v);
+});
+function showView(v) {
+  closeDrawer();
+  S.view = v;
+  document.querySelectorAll(".view").forEach((el) => el.classList.add("hidden"));
+  document.getElementById("view-" + v).classList.remove("hidden");
+  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
+  loadCurrentView();
+}
+
+async function loadCurrentView() {
+  try {
+    if (S.view === "home")      return loadHome();
+    if (S.view === "analytics") return loadAnalytics();
+    if (S.view === "advisor")   return loadAdvisor();
+    if (S.view === "guide")     return;
+    if (S.view === "scans")     return loadScans();
+    if (S.view === "findings")  return loadFindingsHome();
+    if (S.view === "autofix")   return loadAutofix();
+    if (S.view === "patches")   return loadPatches();
+    if (S.view === "blocklist") return loadBlocklist();
+    if (S.view === "whitelist") return loadWhitelist();
+    if (S.view === "policy")    return loadPolicy();
+    if (S.view === "audit")     return loadAudit();
+    if (S.view === "reports")   return loadReports();
+    if (S.view === "settings")  return loadSettings();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+let _timelineChart, _severityChart;
+async function loadHome() {
+  const stats = await api("/api/stats");
+  renderHomeStatus(stats);
+}
+async function loadAnalytics() {
+  const stats = await api("/api/stats");
+  renderKpis(stats);
+  await Promise.all([loadTimeline(), loadSeverityChart()]);
+  await loadRecentScans();
+}
+function renderHomeStatus(s) {
+  const host = document.getElementById("homeStatus");
+  S.latestScanId = s.lastScan?.id || S.latestScanId;
+  const last = s.lastScan
+    ? `<code>${esc(s.lastScan.skill_name)}</code><br><span class="badge lvl-${levelKey(s.lastScan.risk_level)}">${displayLevel(s.lastScan.risk_level)}</span> ${s.lastScan.risk_score}/100 · <span class="muted">${fmt(s.lastScan.scanned_at)}</span>`
+    : `<span class="muted">No audits yet</span>`;
+  host.innerHTML = `
+    <div class="status-line">
+      <div class="label">Last audit</div>
+      <div class="value">${last}</div>
+    </div>
+    <div class="status-line">
+      <div class="label">Open work</div>
+      <div class="value">${s.patchesPending ?? 0} AI review pending · ${s.dangerous ?? 0} dangerous audits</div>
+    </div>
+      <div class="status-line">
+        <div class="label">System</div>
+        <div class="value">Dashboard online · localhost only</div>
+      </div>`;
+  refreshCommandIndex();
+}
+function renderKpis(s) {
+  const host = document.getElementById("kpis");
+  const t = (label, val, kind, hint) =>
+    `<div class="kpi ${kind||'info'}"><div class="label">${label}</div><div class="val">${val}</div><div class="hint">${hint||""}</div></div>`;
+  host.innerHTML = [
+    t("Total scans",        s.totalScans       ?? 0, "info"),
+    t("Dangerous",          s.dangerous        ?? 0, "crit", "risk ≥ policy.critical"),
+    t("Caution",            s.caution          ?? 0, "warn"),
+    t("Safe",               s.safe             ?? 0, "ok"),
+    t("Blocked",            s.blocklisted      ?? 0, "crit"),
+    t("Whitelisted",        s.whitelisted      ?? 0, "ok"),
+    t("Fix previews/runs",  s.autofixRuns      ?? 0, "info"),
+    t("AI patches pending", s.patchesPending   ?? 0, "warn", "awaiting approval"),
+  ].join("");
+}
+
+function loadAdvisor() {
+  const log = document.getElementById("copilotLog");
+  if (!log.dataset.ready) {
+    appendCopilotMessage("assistant", "Welcome to SecureLoop Advisor. I can explain scans in plain English, show technical evidence, prioritize fixes, open reports, and walk you through the product. No execution: I’m not going to let free-form chat silently apply fixes or change policy. Try: Start tutorial");
+    log.dataset.ready = "1";
+  }
+}
+
+function appendCopilotMessage(role, text, actions, meta) {
+  const log = document.getElementById("copilotLog");
+  const msg = document.createElement("div");
+  msg.className = "chat-msg " + role;
+  const body = document.createElement("div");
+  body.className = role === "assistant" ? "chat-md" : "chat-text";
+  if (role === "assistant") renderAdvisorMarkdown(body, text);
+  else body.textContent = text;
+  msg.appendChild(body);
+  if (role === "assistant" && meta) {
+    const line = document.createElement("div");
+    line.className = "chat-engine";
+    const provider = meta.provider ? `${meta.provider}${meta.model ? " · " + meta.model : ""}` : "SecureLoop Brain";
+    const fallback = meta.diagnostic?.aiFallback;
+    line.textContent = fallback
+      ? `Advisor engine: ${provider} fallback · ${fallback.provider} ${fallback.stage}: ${fallback.message}`
+      : `Advisor engine: ${provider}`;
+    msg.appendChild(line);
+  }
+  if (actions && actions.length) {
+    const wrap = document.createElement("div");
+    wrap.className = "chat-actions";
+    for (const action of actions) {
+      const b = document.createElement("button");
+      b.textContent = action.label;
+      b.addEventListener("click", () => runCopilotAction(action));
+      wrap.appendChild(b);
+    }
+    msg.appendChild(wrap);
+  }
+  log.appendChild(msg);
+  log.scrollTop = log.scrollHeight;
+}
+
+function renderAdvisorMarkdown(host, text) {
+  const lines = String(text || "").split(/\r?\n/);
+  let list = null;
+  const closeList = () => { list = null; };
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    if (!line.trim()) {
+      closeList();
+      continue;
+    }
+    const heading = line.match(/^#{1,4}\s+(.+)$/);
+    if (heading) {
+      closeList();
+      const h = document.createElement("h4");
+      appendInlineMarkdown(h, heading[1]);
+      host.appendChild(h);
+      continue;
+    }
+    const bullet = line.match(/^[-*]\s+(.+)$/);
+    if (bullet) {
+      if (!list || list.tagName !== "UL") {
+        list = document.createElement("ul");
+        host.appendChild(list);
+      }
+      const li = document.createElement("li");
+      appendInlineMarkdown(li, bullet[1]);
+      list.appendChild(li);
+      continue;
+    }
+    const numbered = line.match(/^\d+\.\s+(.+)$/);
+    if (numbered) {
+      if (!list || list.tagName !== "OL") {
+        list = document.createElement("ol");
+        host.appendChild(list);
+      }
+      const li = document.createElement("li");
+      appendInlineMarkdown(li, numbered[1]);
+      list.appendChild(li);
+      continue;
+    }
+    closeList();
+    const p = document.createElement("p");
+    appendInlineMarkdown(p, line);
+    host.appendChild(p);
+  }
+}
+
+function appendInlineMarkdown(parent, text) {
+  const pattern = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+  let last = 0;
+  for (const match of String(text || "").matchAll(pattern)) {
+    if (match.index > last) parent.appendChild(document.createTextNode(text.slice(last, match.index)));
+    const token = match[0];
+    const el = document.createElement(token.startsWith("`") ? "code" : "strong");
+    el.textContent = token.startsWith("`") ? token.slice(1, -1) : token.slice(2, -2);
+    parent.appendChild(el);
+    last = match.index + token.length;
+  }
+  if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+}
+
+async function sendCopilotMessage(text) {
+  const input = document.getElementById("copilotInput");
+  const send = document.getElementById("copilotSend");
+  if (S.copilotBusy) return;
+  const message = (text || input.value).trim();
+  if (!message) return;
+  S.copilotBusy = true;
+  send.disabled = true;
+  send.textContent = "Thinking";
+  input.value = "";
+  input.style.height = "";
+  appendCopilotMessage("user", message);
+  try {
+    const out = await api("/api/copilot", {
+      method: "POST",
+      body: JSON.stringify({ mode: S.copilotMode, message }),
+    });
+    appendCopilotMessage("assistant", out.reply || "No response.", out.actions || [], {
+      provider: out.provider,
+      model: out.model,
+      source: out.source,
+      diagnostic: out.diagnostic,
+    });
+    if (out.intent === "navigate" && out.actions?.length === 1 && ["view", "open-scan", "open-report"].includes(out.actions[0].action)) {
+      await runCopilotAction(out.actions[0]);
+    }
+  } catch (e) {
+    appendCopilotMessage("assistant", "Advisor error: " + e.message);
+  } finally {
+    S.copilotBusy = false;
+    send.disabled = false;
+    send.textContent = "Send";
+    input.focus();
+  }
+}
+
+async function runCopilotAction(action) {
+  try {
+    if (action.action === "ask") return sendCopilotMessage(action.prompt || "");
+    if (action.action === "view") {
+      showView(action.view);
+      closeAdvisor({ nudge: true });
+      return;
+    }
+    if (action.action === "open-scan") {
+      await openScanDrawer(action.scanId);
+      closeAdvisor({ nudge: true });
+      return;
+    }
+    if (action.action === "open-report") {
+      openScanReport(action.scanId);
+      closeAdvisor({ nudge: true });
+      return;
+    }
+    if (action.action === "download") return downloadExport(action.path);
+    if (action.action === "preview-fixes") return runAutofixForSkill(action.target, false);
+    if (action.action === "run-scan") {
+      appendCopilotMessage("assistant", "Running audit for " + action.target + "...");
+      const result = await api("/api/scan", { method: "POST", body: JSON.stringify({ target: action.target }) });
+      appendCopilotMessage("assistant", `Audit complete. Scan #${result.scanId} scored ${result.score}/100 (${result.level}).`, [
+        { label: "Open scan details", action: "open-scan", scanId: result.scanId },
+        { label: "Open scan report", action: "open-report", scanId: result.scanId },
+      ]);
+      if (S.view === "home") await loadHome();
+      return;
+    }
+    toast("Unknown Advisor action", "err");
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+document.getElementById("copilotModes").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  S.copilotMode = b.dataset.mode || "executive";
+  document.querySelectorAll("#copilotModes button").forEach((btn) => btn.classList.toggle("active", btn === b));
+});
+document.getElementById("copilotSend").addEventListener("click", () => sendCopilotMessage());
+document.getElementById("copilotInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    sendCopilotMessage();
+  }
+});
+document.getElementById("copilotInput").addEventListener("input", (e) => {
+  e.target.style.height = "auto";
+  e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+});
+document.getElementById("advisorFab").addEventListener("click", () => openAdvisor());
+document.getElementById("advisorClose").addEventListener("click", () => closeAdvisor());
+document.getElementById("advisorOpenFromPage").addEventListener("click", () => openAdvisor());
+function openAdvisor() {
+  const win = document.getElementById("advisorWindow");
+  win.classList.add("open");
+  win.setAttribute("aria-hidden", "false");
+  loadAdvisor();
+  setTimeout(() => document.getElementById("copilotInput").focus(), 20);
+}
+function closeAdvisor(options = {}) {
+  const win = document.getElementById("advisorWindow");
+  win.classList.remove("open");
+  win.setAttribute("aria-hidden", "true");
+  if (options.nudge) nudgeAdvisorFab();
+}
+function nudgeAdvisorFab() {
+  const fab = document.getElementById("advisorFab");
+  fab.classList.remove("nudge");
+  void fab.offsetWidth;
+  fab.classList.add("nudge");
+  setTimeout(() => fab.classList.remove("nudge"), 1300);
+}
+function refreshCommandIndex() {
+  S.commandIndex = [
+    { title: "Run system audit", detail: "Start a computer posture scan", run: () => { showView("home"); document.getElementById("homeScanInput").value = "system"; document.getElementById("homeScanBtn").click(); } },
+    { title: "Open latest scan", detail: "Jump to the newest scan details", run: () => S.latestScanId ? openScanDrawer(S.latestScanId) : showView("scans") },
+    { title: "Ask Advisor", detail: "Open the scan-aware assistant", run: () => openAdvisor() },
+    { title: "Guided audit", detail: "Run the safe vulnerable sample workflow", run: () => showView("guide") },
+    { title: "Findings explorer", detail: "Review technical evidence", run: () => showView("findings") },
+    { title: "Reports and exports", detail: "Open evidence reports, SARIF, CSV, JSON", run: () => showView("reports") },
+    { title: "AI review patches", detail: "Review human-approved AI remediation", run: () => showView("patches") },
+    { title: "Security policy", detail: "Tune thresholds and governance", run: () => showView("policy") },
+    { title: "Provider health", detail: "Open settings and AI provider status", run: () => showView("settings") },
+  ];
+}
+function openCommandPalette() {
+  refreshCommandIndex();
+  document.getElementById("commandOverlay").classList.add("open");
+  document.getElementById("commandOverlay").setAttribute("aria-hidden", "false");
+  document.getElementById("commandInput").value = "";
+  renderCommandList("");
+  setTimeout(() => document.getElementById("commandInput").focus(), 20);
+}
+function closeCommandPalette() {
+  document.getElementById("commandOverlay").classList.remove("open");
+  document.getElementById("commandOverlay").setAttribute("aria-hidden", "true");
+}
+function renderCommandList(query) {
+  const q = String(query || "").toLowerCase();
+  const rows = S.commandIndex.filter((cmd) => (cmd.title + " " + cmd.detail).toLowerCase().includes(q));
+  document.getElementById("commandList").innerHTML = rows.map((cmd, i) => `
+    <button class="command-item ${i === 0 ? "active" : ""}" data-command="${i}">
+      <b>${esc(cmd.title)}</b><span>${esc(cmd.detail)}</span>
+    </button>`).join("") || `<div class="empty-state"><strong>No command found</strong>Try scan, report, Advisor, policy, or latest scan.</div>`;
+}
+document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    openCommandPalette();
+  }
+  if (e.key === "Escape") closeCommandPalette();
+});
+document.getElementById("commandInput").addEventListener("input", (e) => renderCommandList(e.target.value));
+document.getElementById("commandInput").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  const first = document.querySelector(".command-item.active") || document.querySelector(".command-item");
+  if (first) first.click();
+});
+document.getElementById("commandList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-command]"); if (!b) return;
+  const visible = [...document.querySelectorAll(".command-item")];
+  const idx = visible.indexOf(b);
+  const query = document.getElementById("commandInput").value.toLowerCase();
+  const rows = S.commandIndex.filter((cmd) => (cmd.title + " " + cmd.detail).toLowerCase().includes(query));
+  closeCommandPalette();
+  rows[idx]?.run();
+});
+document.getElementById("commandOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "commandOverlay") closeCommandPalette();
+});
+document.getElementById("commandOpenBtn").addEventListener("click", openCommandPalette);
+document.querySelectorAll("[data-prompt]").forEach((b) => {
+  b.addEventListener("click", () => { openAdvisor(); sendCopilotMessage(b.dataset.prompt); });
+});
+async function loadTimeline() {
+  const rows = await api("/api/chart/timeline");
+  const ctx = document.getElementById("timelineChart").getContext("2d");
+  if (_timelineChart) _timelineChart.destroy();
+  _timelineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: rows.map((r) => new Date(r.scanned_at).toLocaleDateString()),
+      datasets: [{
+        label: "Risk score",
+        data: rows.map((r) => r.risk_score),
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59,130,246,.18)",
+        fill: true, tension: .3, pointRadius: 3,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { title: (c) => rows[c[0].dataIndex]?.skill_name || "" } },
+      },
+      scales: {
+        y: { min: 0, max: 100, ticks: { color: "#6a7485" }, grid: { color: "#232c3b" } },
+        x: { ticks: { color: "#6a7485" }, grid: { color: "#232c3b" } },
+      },
+    },
+  });
+}
+async function loadSeverityChart() {
+  const d = await api("/api/chart/severity");
+  const ctx = document.getElementById("severityChart").getContext("2d");
+  if (_severityChart) _severityChart.destroy();
+  _severityChart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Critical", "High", "Medium", "Low"],
+      datasets: [{
+        data: [d.critical, d.high, d.medium, d.low],
+        backgroundColor: ["#dc2626", "#f59e0b", "#eab308", "#3b82f6"],
+        borderColor: "#0f141c", borderWidth: 2,
+      }],
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { color: "#aab3c2" } } } },
+  });
+}
+async function loadRecentScans() {
+  const r = await api("/api/scans?limit=10&offset=0");
+  const tbody = document.querySelector("#recentScansTable tbody");
+  tbody.innerHTML = r.scans.map(renderScanRow).join("") || `<tr><td colspan="5" class="muted">No scans yet.</td></tr>`;
+}
+function renderScanRow(s) {
+  return `<tr>
+    <td><code>${esc(s.skill_name)}</code></td>
+    <td class="num">${s.risk_score}/100</td>
+    <td><span class="badge lvl-${levelKey(s.risk_level)}">${displayLevel(s.risk_level)}</span></td>
+    <td class="muted">${fmt(s.scanned_at)}</td>
+    <td><button onclick='openScanDrawer(${s.id})'>Details</button></td>
+  </tr>`;
+}
+function levelKey(l) { return (l || "").replace(/[^A-Z]/gi, "").toUpperCase(); }
+function displayLevel(l) { return esc(levelKey(l) || "UNKNOWN"); }
+
+document.getElementById("homeRefresh").addEventListener("click", loadHome);
+document.getElementById("analyticsRefresh").addEventListener("click", loadAnalytics);
+document.getElementById("timelineRefresh").addEventListener("click", loadTimeline);
+document.getElementById("goToScans").addEventListener("click", () => showView("scans"));
+document.getElementById("scanProfile").addEventListener("change", updateScanProfileHint);
+updateScanProfileHint();
+function updateScanProfileHint() {
+  const profile = document.getElementById("scanProfile").value;
+  const copy = {
+    quick: "Fast posture check for quick triage and demos.",
+    standard: "Balanced audit with code, dependency, permission, network, system, and attack-path checks.",
+    deep: "Presentation mode: same safe scanners today, with deeper review guidance and stronger evidence framing.",
+  };
+  document.getElementById("scanProfileHint").textContent = copy[profile] || copy.standard;
+}
+function setScanProgress(step, active = true) {
+  const box = document.getElementById("scanProgress");
+  box.classList.toggle("active", active);
+  document.querySelectorAll(".scan-step").forEach((el) => {
+    const idx = Number(el.dataset.step);
+    el.classList.toggle("done", active && idx < step);
+    el.classList.toggle("active", active && idx === step);
+  });
+}
+async function runHomeScan(target) {
+  const profile = document.getElementById("scanProfile").value;
+  const btn = document.getElementById("homeScanBtn");
+  btn.disabled = true;
+  btn.textContent = "Scanning";
+  setScanProgress(0);
+  const timer = setInterval(() => {
+    const active = [...document.querySelectorAll(".scan-step")].find((el) => el.classList.contains("active"));
+    const next = Math.min(Number(active?.dataset.step || 0) + 1, 4);
+    setScanProgress(next);
+  }, 650);
+  try {
+    const r = await api("/api/scan", { method: "POST", body: JSON.stringify({ target, profile }) });
+    clearInterval(timer);
+    setScanProgress(5);
+    S.latestScanId = r.scanId || S.latestScanId;
+    toast("Scan complete: " + target, "ok");
+    await loadHome();
+    if (S.view === "analytics") await loadAnalytics();
+    if (r.scanId) await openScanDrawer(r.scanId);
+  } finally {
+    clearInterval(timer);
+    btn.disabled = false;
+    btn.textContent = "Run Audit";
+    setTimeout(() => setScanProgress(0, false), 1200);
+  }
+}
+document.getElementById("homeScanBtn").addEventListener("click", async () => {
+  const target = document.getElementById("homeScanInput").value.trim();
+  if (!target) return toast("Enter a skill, folder path, or system", "err");
+  try { await runHomeScan(target); } catch (e) { toast(e.message, "err"); }
+});
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.askFinding !== undefined) {
+    const detail = b.dataset.askDetail ? ` Evidence: ${b.dataset.askDetail}` : "";
+    openAdvisor();
+    sendCopilotMessage(`Explain this finding and what I should do next: ${b.dataset.askFinding}.${detail}`);
+    return;
+  }
+  if (b.dataset.viewJump) {
+    showView(b.dataset.viewJump);
+    return;
+  }
+  if (!b.dataset.fill && !b.dataset.target && !b.dataset.demo && !b.dataset.demoReset) return;
+  const input = document.getElementById("homeScanInput");
+  if (b.dataset.fill) {
+    input.value = b.dataset.fill;
+    input.focus();
+    toast("Target loaded. Edit it if needed, then run the scan.", "ok");
+    return;
+  }
+  if (b.dataset.target) {
+    input.value = b.dataset.target;
+    document.getElementById("homeScanBtn").click();
+  }
+  if (b.dataset.demo) {
+    input.value = "./demo-vulnerable-project";
+    toast("Sample target loaded. Running the guided audit now…");
+    document.getElementById("homeScanBtn").click();
+  }
+  if (b.dataset.demoReset) {
+    await api("/api/demo/reset", { method: "POST" });
+    input.value = "./demo-vulnerable-project";
+    toast("Sample project reset. You can run the guided audit from a clean starting point.", "ok");
+  }
+});
+document.getElementById("setPinLink").addEventListener("click", (e) => { e.preventDefault(); showView("settings"); });
+
+async function loadScans() {
+  const p = S.scansPage;
+  const q = new URLSearchParams();
+  q.set("limit", p.limit); q.set("offset", p.offset);
+  for (const k in p.filters) if (p.filters[k]) q.set(k, p.filters[k]);
+  const r = await api("/api/scans?" + q.toString());
+  p.total = r.total;
+  const tbody = document.querySelector("#scansTable tbody");
+  tbody.innerHTML = r.scans.map((s) => `<tr>
+    <td>#${s.id}</td>
+    <td><code>${esc(s.skill_name)}</code></td>
+    <td class="num">${s.risk_score}/100</td>
+    <td><span class="badge lvl-${levelKey(s.risk_level)}">${displayLevel(s.risk_level)}</span></td>
+    <td class="muted">${fmt(s.scanned_at)}</td>
+    <td><button onclick='openScanDrawer(${s.id})'>Details</button></td>
+  </tr>`).join("") || `<tr><td colspan="6" class="muted">No scans match.</td></tr>`;
+  document.getElementById("scansPagerInfo").textContent = "Showing " + r.scans.length + " of " + r.total + " · offset " + r.offset;
+}
+document.getElementById("scansApply").addEventListener("click", () => {
+  S.scansPage.offset = 0;
+  S.scansPage.filters = {
+    q:     document.getElementById("scansQ").value.trim(),
+    level: document.getElementById("scansLevel").value,
+    since: document.getElementById("scansSince").value,
+    until: document.getElementById("scansUntil").value,
+  };
+  loadScans();
+});
+document.getElementById("scansClear").addEventListener("click", () => {
+  ["scansQ","scansLevel","scansSince","scansUntil"].forEach((id) => { document.getElementById(id).value = ""; });
+  S.scansPage.offset = 0; S.scansPage.filters = {}; loadScans();
+});
+document.getElementById("scansPrev").addEventListener("click", () => { S.scansPage.offset = Math.max(0, S.scansPage.offset - S.scansPage.limit); loadScans(); });
+document.getElementById("scansNext").addEventListener("click", () => { S.scansPage.offset += S.scansPage.limit; loadScans(); });
+document.getElementById("scansExportCsv").addEventListener("click",  () => downloadExport("/api/export/scans?format=csv"));
+document.getElementById("scansExportJson").addEventListener("click", () => downloadExport("/api/export/scans?format=json"));
+
+async function openScanDrawer(id) {
+  const s = await api("/api/scans/" + id);
+  const history = await api("/api/scans?skill=" + encodeURIComponent(s.skill_name) + "&limit=20&offset=0");
+  const previous = (history.scans || []).filter((row) => row.id !== s.id && row.id < s.id)[0] || null;
+  const bySev = { critical: [], high: [], medium: [], low: [] };
+  for (const f of (s.findings || [])) (bySev[f.severity] || bySev.low).push(f);
+  const laneCounts = buildLaneCounts(s.findings || []);
+  const totalFindings = (s.findings || []).length;
+  const enrichSummary = summarizeFindingMetadata(s.findings || []);
+  const plain = plainEnglishSummary(s, totalFindings, bySev);
+  const next = nextActionSummary(s, totalFindings, bySev);
+  const lanes = scanLanes(s.skill_name, laneCounts);
+  const sec = (name, arr) => arr.length ? `
+    <h4 style="margin:14px 0 6px">${name} (${arr.length})</h4>
+    ${arr.map((f) => `
+      <div style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px">
+        <div><span class="badge sev-${f.severity}">${f.severity}</span> <b>${esc(f.message)}</b></div>
+        ${f.exploitability ? `<div class="muted" style="font-size:12px;margin-top:4px">Exploitability: <b>${f.exploitability.score}/100 · ${esc(f.exploitability.band)}</b> · Confidence: <b>${esc(f.confidence || "medium")}</b> · Impact: ${esc(f.impact || "Security hygiene")}</div>` : ""}
+        ${f.detail ? `<div class="muted" style="font-size:12px;margin-top:4px"><code>${esc(f.detail)}</code></div>` : ""}
+        ${f.fix    ? `<div style="margin-top:4px;color:#86efac">${esc(f.fix)}</div>` : ""}
+        ${f.osvUrl ? `<div style="margin-top:4px"><a href="${esc(f.osvUrl)}" target="_blank" rel="noopener">OSV details</a></div>` : ""}
+        <div style="margin-top:8px"><button data-ask-finding="${esc(f.message)}" data-ask-detail="${esc(f.detail || "")}">Ask Advisor</button></div>
+      </div>`).join("")}` : "";
+  openDrawer("Scan #" + s.id + " — " + s.skill_name,
+    `<div class="scan-summary">
+       <div class="scan-box"><div class="label">Risk score</div><div class="value">${s.risk_score}/100</div></div>
+       <div class="scan-box"><div class="label">Verdict</div><div class="value"><span class="badge lvl-${levelKey(s.risk_level)}">${displayLevel(s.risk_level)}</span></div></div>
+       <div class="scan-box"><div class="label">Findings</div><div class="value">${totalFindings}</div></div>
+       <div class="scan-box"><div class="label">Exploitability</div><div class="value">${enrichSummary.exploitability}/100</div></div>
+       <div class="scan-box"><div class="label">Attack paths</div><div class="value">${enrichSummary.attackPaths}</div></div>
+       <div class="scan-box"><div class="label">Confidence</div><div class="value">${esc(enrichSummary.confidence)}</div></div>
+     </div>
+     <div class="muted">${fmt(s.scanned_at)}</div>
+
+     <div class="explain-panel">
+       <h4>Plain-English Summary</h4>
+       <p>${plain}</p>
+     </div>
+
+     <div class="explain-panel">
+       <h4>What SecureLoop Checked</h4>
+       <div class="lane-grid">${lanes}</div>
+     </div>
+
+     <div class="explain-panel">
+       <h4>Recommended Next Step</h4>
+       <p>${next}</p>
+     </div>
+
+     ${verificationPanel(s, previous)}
+
+     <div class="explain-panel">
+       <h4>Technical Evidence</h4>
+       <p>Findings are grouped by severity. Each item includes the scanner message, file or package detail when available, and fix metadata when the scanner can infer it.</p>
+     </div>
+
+     ${sec("Critical", bySev.critical)}
+     ${sec("High",     bySev.high)}
+     ${sec("Medium",   bySev.medium)}
+     ${sec("Low",      bySev.low)}`,
+    `<button onclick='runAutofixForSkill("${esc(s.skill_name)}", false)'>Preview Fixes</button>
+     <button onclick='openScanReport(${s.id})'>Scan Report</button>
+     <button class="primary" onclick='runAutofixForSkill("${esc(s.skill_name)}", true)'>Apply Safe Fixes</button>`);
+}
+window.openScanDrawer = openScanDrawer;
+
+function openScanReport(id) {
+  const q = new URLSearchParams();
+  if (id) q.set("scanId", id);
+  if (S.token) q.set("token", S.token);
+  openReportUrl("/api/export/scan-report.html?" + q.toString());
+}
+window.openScanReport = openScanReport;
+
+function openReportUrl(url) {
+  const opened = window.open(url, "_blank", "noopener");
+  if (!opened) window.location.href = url;
+}
+
+function summarizeFindingMetadata(findings) {
+  if (!findings.length) return { exploitability: 0, attackPaths: 0, confidence: "high" };
+  const exploitability = Math.max(...findings.map((f) => Number(f.exploitability?.score || 0)));
+  const attackPaths = findings.filter((f) => f.category === "attack-path").length;
+  const highConfidence = findings.filter((f) => f.confidence === "high").length;
+  return {
+    exploitability,
+    attackPaths,
+    confidence: highConfidence >= Math.ceil(findings.length / 2) ? "high" : "medium",
+  };
+}
+
+function verificationPanel(current, previous) {
+  if (!previous) {
+    return `<div class="explain-panel">
+      <h4>Verification Timeline</h4>
+      <p>This is the first recorded scan for this target. After applying safe fixes, SecureLoop automatically rescans so you can compare before and after.</p>
+    </div>`;
+  }
+  const delta = current.risk_score - previous.risk_score;
+  const improved = delta < 0;
+  const unchanged = delta === 0;
+  const phrase = unchanged
+    ? "Risk score stayed the same."
+    : improved
+      ? `Risk score improved by ${Math.abs(delta)} point${Math.abs(delta) === 1 ? "" : "s"}.`
+      : `Risk score increased by ${delta} point${delta === 1 ? "" : "s"}, so this target needs another review.`;
+  return `<div class="explain-panel">
+    <h4>Verification Timeline</h4>
+    <p>${phrase} Previous scan #${previous.id}: ${previous.risk_score}/100 (${displayLevel(previous.risk_level)}). Current scan #${current.id}: ${current.risk_score}/100 (${displayLevel(current.risk_level)}).</p>
+  </div>`;
+}
+
+function buildLaneCounts(findings) {
+  const counts = { static: 0, dependencies: 0, permissions: 0, network: 0, system: 0, behavior: 0 };
+  for (const f of findings) {
+    if (["secrets", "dangerous-code", "obfuscation", "access"].includes(f.category)) counts.static++;
+    else if (f.category === "dependencies") counts.dependencies++;
+    else if (f.category === "permissions") counts.permissions++;
+    else if (f.category === "network") counts.network++;
+    else if (f.category === "system") counts.system++;
+    else if (f.category === "attack-path") counts.behavior++;
+  }
+  return counts;
+}
+
+function scanLanes(target, counts) {
+  const isSystem = String(target || "").toLowerCase() === "system";
+  const rows = [
+    ["Code & Secrets", isSystem ? "Skipped for system scans; used for project and software targets." : "Looked for hardcoded secrets, dangerous code, and obfuscation.", counts.static],
+    ["Dependencies", isSystem ? "Skipped for system scans; used when package.json exists." : "Checked npm dependency hygiene and known vulnerability data.", counts.dependencies],
+    ["Permissions", isSystem ? "Skipped for system scans; used for manifests and package metadata." : "Reviewed manifests, lifecycle scripts, scopes, and secret-file packaging.", counts.permissions],
+    ["Network Exposure", "Checked passive network-risk signals such as broad binds, CORS, HTTP, TLS, and SSH network posture.", counts.network],
+    ["System Posture", "Checked privacy-preserving local hygiene such as sensitive filenames, .gitignore coverage, and SSH key permissions.", counts.system],
+    ["Attack Paths", isSystem ? "Skipped for system scans; used for project and software targets." : "Connected risky ingredients such as request input, privileged sinks, admin routes, and network exposure.", counts.behavior],
+  ];
+  return rows.map(([name, desc, count]) => `
+    <div class="lane">
+      <strong>${esc(name)} <span class="count">${count}</span></strong>
+      <span>${esc(desc)}</span>
+    </div>`).join("");
+}
+
+function plainEnglishSummary(scan, total, bySev) {
+  const level = levelKey(scan.risk_level);
+  if (total === 0) {
+    return "SecureLoop did not find reportable issues in this run. For a computer scan, this can finish quickly because it only performs passive, privacy-preserving checks.";
+  }
+  if (level === "DANGEROUS") {
+    return `SecureLoop found ${total} issue${total === 1 ? "" : "s"}, including ${bySev.critical.length} critical and ${bySev.high.length} high-severity finding${bySev.high.length === 1 ? "" : "s"}. Do not trust this target until the critical items are reviewed.`;
+  }
+  if (level === "CAUTION") {
+    return `SecureLoop found ${total} issue${total === 1 ? "" : "s"}. The target is not automatically unsafe, but it needs review before you rely on it.`;
+  }
+  return `SecureLoop found only low-risk items in this run. Review the notes, but there are no major blockers from the current scanner rules.`;
+}
+
+function nextActionSummary(scan, total, bySev) {
+  if (total === 0) return "If this was a computer scan, run a project-folder scan next to demonstrate code, dependency, permission, and network checks.";
+  if (bySev.critical.length || bySev.high.length) return "Open the technical evidence below, preview safe fixes, and use AI Review Patches only for changes that need human approval.";
+  if (bySev.medium.length) return "Review the medium findings and preview fixes to see whether SecureLoop has safe changes available.";
+  return "These are mostly hygiene notes. Preview fixes to inspect non-destructive cleanup before anything writes to disk.";
+}
+
+async function runAutofixForSkill(skill, apply) {
+  try {
+    toast((apply ? "Applying safe fixes" : "Previewing fixes") + " on " + skill + "…");
+    const r = await api("/api/autofix/" + encodeURIComponent(skill) + "?apply=" + (apply ? 1 : 0), { method: "POST" });
+    toast("Fix result: safe " + (r.counts?.tier1Applied || 0) + "/" + (r.counts?.tier1Total || 0)
+        + ", AI review " + (r.counts?.tier2Drafted || 0) + "/" + (r.counts?.tier2Total || 0)
+        + ", manual review " + (r.counts?.tier3Total || 0), "ok");
+    if (apply) {
+      toast("Rescanning to verify the safe fixes…");
+      await api("/api/scan", { method: "POST", body: JSON.stringify({ target: skill }) });
+      toast("Verification rescan complete. Open the latest scan details to compare.", "ok");
+    }
+    if (S.view === "autofix") loadAutofix();
+    if (S.view === "patches") loadPatches();
+    if (S.view === "home") loadHome();
+    if (S.view === "analytics") loadAnalytics();
+  } catch (e) { toast(e.message, "err"); }
+}
+window.runAutofixForSkill = runAutofixForSkill;
+
+async function loadFindingsHome() {
+  const host = document.getElementById("findContainer");
+  if (document.getElementById("findSkill").value.trim()) return;
+  const r = await api("/api/scans?limit=1&offset=0");
+  const latest = r.scans?.[0];
+  if (!latest) {
+    host.innerHTML = `<div class="empty-state"><strong>No findings yet</strong>Run an audit first, then SecureLoop will show technical evidence here.</div>`;
+    return;
+  }
+  document.getElementById("findSkill").value = latest.skill_name;
+  document.getElementById("findLoad").click();
+}
+document.getElementById("findLoad").addEventListener("click", async () => {
+  const skill = document.getElementById("findSkill").value.trim();
+  if (!skill) return toast("Enter a target", "err");
+  try {
+    const scans = await api("/api/scans/skill/" + encodeURIComponent(skill));
+    const host = document.getElementById("findContainer");
+    if (!scans.length) { host.innerHTML = `<div class="empty-state"><strong>No scans found</strong>No scans for <code>${esc(skill)}</code>.</div>`; return; }
+    host.innerHTML = scans.map((s) => `
+      <div style="margin-bottom:16px">
+        <div class="row" style="justify-content:space-between">
+          <div><b>Scan #${s.id}</b> · <span class="badge lvl-${levelKey(s.risk_level)}">${displayLevel(s.risk_level)}</span> · ${s.risk_score}/100</div>
+          <div class="muted">${fmt(s.scanned_at)}</div>
+        </div>
+        <table class="grid" style="margin-top:6px">
+          <thead><tr><th>Sev</th><th>Finding</th><th>Detail</th><th>Fix</th><th></th></tr></thead>
+          <tbody>${(s.findings || []).map((f) => `
+            <tr>
+              <td><span class="badge sev-${f.severity}">${f.severity}</span></td>
+              <td>${esc(f.message)}</td>
+              <td class="muted"><code>${esc(f.detail || "")}</code></td>
+              <td>${esc(f.fix || "")}</td>
+              <td><button data-ask-finding="${esc(f.message)}" data-ask-detail="${esc(f.detail || "")}">Ask Advisor</button></td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`).join("");
+  } catch (e) { toast(e.message, "err"); }
+});
+
+async function loadAutofix() {
+  const rows = await api("/api/autofix/runs");
+  const tbody = document.querySelector("#autofixTable tbody");
+  tbody.innerHTML = rows.map((r) => `<tr>
+    <td>#${r.id}</td>
+    <td><code>${esc(r.skill_name)}</code></td>
+    <td>${r.dry_run ? "preview" : "applied"}</td>
+    <td class="num">${r.tier1_applied}/${r.tier1_total}</td>
+    <td class="num">${r.tier2_total}</td>
+    <td class="num">${r.tier3_total}</td>
+    <td class="muted">${fmt(r.created_at)}</td>
+    <td><button onclick='openRunDrawer(${r.id})'>Open</button></td>
+  </tr>`).join("") || `<tr><td colspan="8" class="muted">No fix runs yet.</td></tr>`;
+}
+async function openRunDrawer(id) {
+  const r = await api("/api/autofix/runs/" + id);
+  const rep = r.report || {};
+  openDrawer("Fix Run #" + r.id + " — " + r.skill_name,
+    `<div class="row" style="gap:16px">
+       <div><b>Mode:</b> ${r.dry_run ? "Preview only" : "Applied safe fixes"}</div>
+       <div><b>Safe fixes:</b> ${r.tier1_applied}/${r.tier1_total}</div>
+       <div><b>AI review drafts:</b> ${rep.counts?.tier2Drafted ?? 0}/${rep.counts?.tier2Total ?? 0}</div>
+       <div><b>Manual review:</b> ${r.tier3_total}</div>
+       <div class="muted">${fmt(r.created_at)}</div>
+     </div>
+     <pre style="margin-top:12px;background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;font-size:11.5px">${esc(JSON.stringify(rep, null, 2))}</pre>`, "");
+}
+window.openRunDrawer = openRunDrawer;
+document.getElementById("autofixDryRunBtn").addEventListener("click", () => {
+  const s = document.getElementById("autofixSkillInput").value.trim();
+  if (!s) return toast("Enter a target", "err");
+  runAutofixForSkill(s, false);
+});
+document.getElementById("autofixApplyBtn").addEventListener("click", () => {
+  const s = document.getElementById("autofixSkillInput").value.trim();
+  if (!s) return toast("Enter a target", "err");
+  if (!confirm("Apply safe deterministic fixes to " + s + "? This writes to disk, then SecureLoop will rescan to verify.")) return;
+  runAutofixForSkill(s, true);
+});
+
+async function loadPatches() {
+  const q = new URLSearchParams();
+  const status = document.getElementById("patchStatus").value;
+  const skill  = document.getElementById("patchSkill").value.trim();
+  if (status) q.set("status", status);
+  if (skill)  q.set("skill", skill);
+  q.set("limit", 200);
+  const rows = await api("/api/patches?" + q.toString());
+  const tbody = document.querySelector("#patchTable tbody");
+  tbody.innerHTML = rows.map((p) => `<tr>
+    <td>#${p.id}</td>
+    <td><code>${esc(p.skill_name)}</code></td>
+    <td><code>${esc(p.file)}:${p.line ?? "?"}</code></td>
+    <td class="num">${p.confidence != null ? Math.round(p.confidence*100) + "%" : "—"}</td>
+    <td>${esc(p.fix_reason)}</td>
+    <td><span class="badge st-${p.status}">${p.status}</span></td>
+    <td class="muted">${fmt(p.created_at)}</td>
+    <td><button onclick='openPatchDrawer(${p.id})'>Review</button></td>
+  </tr>`).join("") || `<tr><td colspan="8" class="muted">No patches for this filter.</td></tr>`;
+}
+document.getElementById("patchApply").addEventListener("click", loadPatches);
+document.getElementById("patchExportCsv").addEventListener("click", () => {
+  const q = new URLSearchParams({ format: "csv" });
+  const status = document.getElementById("patchStatus").value;
+  const skill  = document.getElementById("patchSkill").value.trim();
+  if (status) q.set("status", status);
+  if (skill)  q.set("skill", skill);
+  downloadExport("/api/export/patches?" + q.toString());
+});
+document.getElementById("patchProposeBtn").addEventListener("click", async () => {
+  const s = document.getElementById("patchProposeSkill").value.trim();
+  if (!s) return toast("Enter a target", "err");
+  toast("Proposing AI review patches for " + s + "… (requires OPENAI_API_KEY)");
+  try {
+    const r = await api("/api/patches/propose/" + encodeURIComponent(s), { method: "POST" });
+    toast("Drafted " + r.drafted + "/" + r.total + " AI patches", "ok");
+    loadPatches();
+  } catch (e) { toast(e.message, "err"); }
+});
+
+async function openPatchDrawer(id) {
+  const p = await api("/api/patches/" + id);
+  let env = []; try { env = JSON.parse(p.env_vars || "[]"); } catch {}
+  const diff = renderDiff(p.diff || "");
+  const actions = p.status === "pending"
+    ? `<button onclick='patchAction(${p.id}, "reject")' class="danger">Reject</button>
+       <button onclick='patchAction(${p.id}, "approve")'>Approve (no write)</button>
+       <button onclick='patchAction(${p.id}, "apply")'   class="primary">Approve & Apply</button>`
+    : `<button class="ghost" disabled>Status: ${p.status}</button>`;
+  openDrawer("Patch #" + p.id + " — " + p.skill_name,
+    `<div class="row" style="gap:16px">
+       <div><b>File:</b> <code>${esc(p.file)}:${p.line ?? "?"}</code></div>
+       <div><b>Status:</b> <span class="badge st-${p.status}">${p.status}</span></div>
+       <div><b>Conf:</b> ${p.confidence != null ? Math.round(p.confidence*100) + "%" : "—"}</div>
+       <div><b>Model:</b> <code>${esc(p.model || "—")}</code></div>
+     </div>
+     <hr>
+     <div><b>Finding:</b> ${esc(p.finding_msg || "—")}</div>
+     ${p.rationale ? `<div style="margin-top:8px"><b>Rationale:</b><br><span class="muted">${esc(p.rationale)}</span></div>` : ""}
+     ${env.length ? `<div style="margin-top:8px"><b>Env vars referenced:</b> ${env.map((v) => `<code>${esc(v)}</code>`).join(", ")}</div>` : ""}
+     ${p.reviewer ? `<div style="margin-top:8px" class="muted">Reviewed by <b>${esc(p.reviewer)}</b> at ${fmt(p.reviewed_at)}${p.review_notes ? " — " + esc(p.review_notes) : ""}</div>` : ""}
+     <h4 style="margin:14px 0 6px">Diff</h4>
+     <pre class="diff">${diff}</pre>`,
+    actions);
+}
+window.openPatchDrawer = openPatchDrawer;
+
+async function patchAction(id, action) {
+  const notes = prompt("Notes for " + action + " (optional):", "") || null;
+  if (action === "apply" && !confirm("Applying writes the diff to disk. The file will be re-validated before write. Continue?")) return;
+  try {
+    const r = await api("/api/patches/" + id + "/" + action, { method: "POST", body: JSON.stringify({ notes }) });
+    toast("Patch #" + id + " → " + (r.status || action), "ok");
+    closeDrawer(); loadPatches();
+  } catch (e) { toast(e.message, "err"); }
+}
+window.patchAction = patchAction;
+
+function renderDiff(text) {
+  return esc(text).split("\n").map((l) => {
+    if (l.startsWith("+"))  return `<span class="a">${l}</span>`;
+    if (l.startsWith("-"))  return `<span class="d">${l}</span>`;
+    if (l.startsWith("@@")) return `<span class="h">${l}</span>`;
+    return l;
+  }).join("\n");
+}
+
+async function loadBlocklist() {
+  const rows = await api("/api/blocklist");
+  const tbody = document.querySelector("#blocklistTable tbody");
+  tbody.innerHTML = rows.map((r) => `<tr>
+    <td><code>${esc(r.skill_name)}</code></td>
+    <td>${esc(r.reason || "")}</td>
+    <td class="muted">${fmt(r.blocked_at)}</td>
+    <td><button onclick='removeBlock("${esc(r.skill_name)}")'>Remove</button></td>
+  </tr>`).join("") || `<tr><td colspan="4" class="muted">Nothing blocked.</td></tr>`;
+}
+async function removeBlock(name) {
+  if (!confirm("Remove " + name + " from blocklist?")) return;
+  await api("/api/blocklist/" + encodeURIComponent(name), { method: "DELETE" });
+  toast("Removed", "ok"); loadBlocklist();
+}
+window.removeBlock = removeBlock;
+document.getElementById("blockAddBtn").addEventListener("click", async () => {
+  const skill  = document.getElementById("blockSkillInput").value.trim();
+  const reason = document.getElementById("blockReasonInput").value.trim();
+  if (!skill) return toast("Enter a skill", "err");
+  await api("/api/blocklist", { method: "POST", body: JSON.stringify({ skill, reason }) });
+  toast("Added to blocklist", "ok");
+  document.getElementById("blockSkillInput").value = "";
+  document.getElementById("blockReasonInput").value = "";
+  loadBlocklist();
+});
+
+async function loadWhitelist() {
+  const rows = await api("/api/whitelist");
+  const tbody = document.querySelector("#whitelistTable tbody");
+  tbody.innerHTML = rows.map((r) => `<tr>
+    <td><code>${esc(r.skill_name)}</code></td>
+    <td class="muted">${fmt(r.added_at)}</td>
+    <td><button onclick='removeWhite("${esc(r.skill_name)}")'>Remove</button></td>
+  </tr>`).join("") || `<tr><td colspan="3" class="muted">No trusted skills.</td></tr>`;
+}
+async function removeWhite(name) {
+  if (!confirm("Remove " + name + " from whitelist?")) return;
+  await api("/api/whitelist/" + encodeURIComponent(name), { method: "DELETE" });
+  toast("Removed", "ok"); loadWhitelist();
+}
+window.removeWhite = removeWhite;
+document.getElementById("whiteAddBtn").addEventListener("click", async () => {
+  const skill = document.getElementById("whiteSkillInput").value.trim();
+  if (!skill) return toast("Enter a skill", "err");
+  await api("/api/whitelist", { method: "POST", body: JSON.stringify({ skill }) });
+  toast("Added to whitelist", "ok");
+  document.getElementById("whiteSkillInput").value = "";
+  loadWhitelist();
+});
+
+async function loadPolicy() {
+  const [p, vs] = await Promise.all([api("/api/policy"), api("/api/policy/versions")]);
+  S.policy = p;
+  document.getElementById("policyVersion").textContent = p.version;
+  const b = p.body;
+  document.getElementById("polCriticalCutoff").value = b.thresholds.criticalCutoff;
+  document.getElementById("polCautionCutoff").value  = b.thresholds.cautionCutoff;
+  document.getElementById("polAutoBlock").value      = b.autoBlockThreshold ?? "";
+  document.getElementById("polTier2Enabled").value   = String(b.tier2.enabled);
+  document.getElementById("polTier2Model").value     = b.tier2.defaultModel;
+  document.getElementById("polTier2Max").value       = b.tier2.maxPatchesPerRun;
+  document.getElementById("polSevCritical").value    = b.severityWeights.critical;
+  document.getElementById("polSevHigh").value        = b.severityWeights.high;
+  document.getElementById("polSevMedium").value      = b.severityWeights.medium;
+  document.getElementById("polSevLow").value         = b.severityWeights.low;
+  document.getElementById("polRetScans").value       = b.retention.scansDays;
+  document.getElementById("polRetAudit").value       = b.retention.auditDays;
+  document.getElementById("polRetPatches").value     = b.retention.patchesDays;
+  document.getElementById("polRequireManual").value  = (b.requireManualApprovalFor || []).join(", ");
+  document.getElementById("polCustomSecrets").value  = JSON.stringify(b.customSecretPatterns || [], null, 2);
+  document.getElementById("polNotes").value = "";
+
+  const tbody = document.querySelector("#policyVersionsTable tbody");
+  tbody.innerHTML = vs.map((v) => `<tr>
+    <td>v${v.version}${v.active ? " · <span class='badge st-approved'>active</span>" : ""}</td>
+    <td>${esc(v.author || "")}</td>
+    <td>${esc(v.notes  || "")}</td>
+    <td class="muted">${fmt(v.createdAt)}</td>
+    <td>${v.active ? "" : `<button onclick='revertPolicyVersion(${v.version})'>Revert</button>`}</td>
+  </tr>`).join("");
+}
+window.revertPolicyVersion = async function (version) {
+  if (!confirm("Revert active policy to v" + version + "? This creates a new version.")) return;
+  await api("/api/policy/revert/" + version, { method: "POST" });
+  toast("Reverted", "ok"); loadPolicy();
+};
+document.getElementById("policyRefresh").addEventListener("click", loadPolicy);
+document.getElementById("policySave").addEventListener("click", async () => {
+  let customSecrets;
+  try { customSecrets = JSON.parse(document.getElementById("polCustomSecrets").value || "[]"); }
+  catch (e) { return toast("Custom secrets must be valid JSON: " + e.message, "err"); }
+  const autoBlock = document.getElementById("polAutoBlock").value;
+  const body = {
+    thresholds: {
+      criticalCutoff: +document.getElementById("polCriticalCutoff").value,
+      cautionCutoff:  +document.getElementById("polCautionCutoff").value,
+    },
+    severityWeights: {
+      critical: +document.getElementById("polSevCritical").value,
+      high:     +document.getElementById("polSevHigh").value,
+      medium:   +document.getElementById("polSevMedium").value,
+      low:      +document.getElementById("polSevLow").value,
+    },
+    customSecretPatterns: customSecrets,
+    autoBlockThreshold: autoBlock === "" ? null : +autoBlock,
+    requireManualApprovalFor: document.getElementById("polRequireManual").value
+      .split(",").map((s) => s.trim()).filter(Boolean),
+    tier2: {
+      enabled: document.getElementById("polTier2Enabled").value === "true",
+      defaultModel: document.getElementById("polTier2Model").value.trim(),
+      maxPatchesPerRun: +document.getElementById("polTier2Max").value,
+    },
+    retention: {
+      scansDays:   +document.getElementById("polRetScans").value,
+      auditDays:   +document.getElementById("polRetAudit").value,
+      patchesDays: +document.getElementById("polRetPatches").value,
+    },
+  };
+  try {
+    await api("/api/policy", { method: "POST", body: JSON.stringify({ policy: body, notes: document.getElementById("polNotes").value || null }) });
+    toast("Policy saved", "ok"); loadPolicy();
+  } catch (e) { toast(e.message, "err"); }
+});
+
+async function loadAudit() {
+  const p = S.auditPage;
+  const q = new URLSearchParams({ limit: p.limit, offset: p.offset });
+  for (const k in p.filters) if (p.filters[k]) q.set(k, p.filters[k]);
+  const r = await api("/api/audit?" + q.toString());
+  p.total = r.total;
+  const tbody = document.querySelector("#auditTable tbody");
+  tbody.innerHTML = r.rows.map((row) => `<tr>
+    <td class="muted">${fmt(row.created_at)}</td>
+    <td><code>${esc(row.actor)}</code></td>
+    <td><code>${esc(row.action)}</code></td>
+    <td>${esc(row.target || "")}</td>
+    <td class="muted">${esc(row.ip || "")}</td>
+    <td class="muted"><code style="font-size:11px">${row.meta ? esc(JSON.stringify(row.meta)) : ""}</code></td>
+  </tr>`).join("") || `<tr><td colspan="6" class="muted">No events.</td></tr>`;
+  document.getElementById("auditPagerInfo").textContent = "Showing " + r.rows.length + " of " + r.total + " · offset " + r.offset;
+}
+document.getElementById("auditApply").addEventListener("click", () => {
+  S.auditPage.offset = 0;
+  S.auditPage.filters = {
+    actor:  document.getElementById("auditActor").value.trim(),
+    action: document.getElementById("auditAction").value.trim(),
+    target: document.getElementById("auditTarget").value.trim(),
+    since:  document.getElementById("auditSince").value,
+    until:  document.getElementById("auditUntil").value,
+  };
+  loadAudit();
+});
+document.getElementById("auditPrev").addEventListener("click", () => { S.auditPage.offset = Math.max(0, S.auditPage.offset - S.auditPage.limit); loadAudit(); });
+document.getElementById("auditNext").addEventListener("click", () => { S.auditPage.offset += S.auditPage.limit; loadAudit(); });
+document.getElementById("auditExportCsv").addEventListener("click",  () => downloadExport("/api/export/audit?format=csv"));
+document.getElementById("auditExportJson").addEventListener("click", () => downloadExport("/api/export/audit?format=json"));
+
+async function loadReports() {
+  const r = await api("/api/scans?limit=1&offset=0");
+  S.latestScanId = r.scans?.[0]?.id || S.latestScanId;
+}
+document.getElementById("repOpen").addEventListener("click", () => {
+  const q = new URLSearchParams();
+  const since = document.getElementById("repSince").value;
+  const until = document.getElementById("repUntil").value;
+  const title = document.getElementById("repTitle").value.trim();
+  if (since) q.set("since", since);
+  if (until) q.set("until", until);
+  if (title) q.set("title", title);
+  if (S.token) q.set("token", S.token);
+  openReportUrl("/api/export/compliance-report.html?" + q.toString());
+});
+document.getElementById("expScansCsv").addEventListener("click",  () => downloadExport("/api/export/scans?format=csv"));
+document.getElementById("expScansJson").addEventListener("click", () => downloadExport("/api/export/scans?format=json"));
+document.getElementById("expSarif").addEventListener("click",     () => downloadExport("/api/export/sarif"));
+document.getElementById("scanReportLatest").addEventListener("click", () => openScanReport());
+document.getElementById("scanReportSarif").addEventListener("click",  () => downloadExport("/api/export/sarif"));
+document.getElementById("expPatchesCsv").addEventListener("click",() => downloadExport("/api/export/patches?format=csv"));
+document.getElementById("expAuditCsv").addEventListener("click",  () => downloadExport("/api/export/audit?format=csv"));
+
+async function downloadExport(path) {
+  try {
+    const headers = {}; if (S.token) headers["Authorization"] = "Bearer " + S.token;
+    const r = await fetch(path, { headers });
+    if (!r.ok) throw new Error("Export failed: " + r.status);
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const cd = r.headers.get("content-disposition") || "";
+    a.download = (cd.match(/filename="([^"]+)"/) || [,"export"])[1];
+    a.click(); URL.revokeObjectURL(url);
+    toast("Downloaded", "ok");
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function loadSettings() {
+  const s = await api("/api/auth/status");
+  const status = await api("/api/status");
+  const advisor = status.advisor || {};
+  const health = document.getElementById("providerHealth");
+  const providerLabel = advisor.openaiEnabled ? "OpenAI connected" : advisor.provider === "local" ? "Local Brain only" : "Fallback-ready";
+  const err = advisor.lastAiError;
+  health.innerHTML = `
+    <strong>${esc(providerLabel)}</strong>
+    <div>Provider: <code>${esc(advisor.provider || "auto")}</code> · Interpretation: <code>${esc(advisor.interpretation || "secureloop-brain")}</code></div>
+    <div>Local fallback: <code>${esc(advisor.freeLocalProvider || "ollama")}</code> · Model: <code>${esc(advisor.ollamaModel || "llama3.1:8b")}</code></div>
+    ${err ? `<div style="margin-top:8px;color:#fcd34d">Last fallback: ${esc(err.provider)} ${esc(err.stage)} · ${esc(err.message)}</div>` : `<div style="margin-top:8px;color:#86efac">No provider errors reported this session.</div>`}
+  `;
+  document.getElementById("pinState").textContent = s.pinConfigured
+    ? "A PIN is currently set. Clearing it will re-open the dashboard."
+    : "No PIN set — anyone with access to this machine can use the dashboard.";
+  document.getElementById("pinClearBtn").disabled = !s.pinConfigured;
+
+  // Role badge in the Settings header
+  if (S.me) {
+    const badge = document.getElementById("meRoleBadge");
+    if (badge) {
+      badge.className = "role-badge " + S.me.role;
+      badge.textContent = "role: " + S.me.role + (S.me.label ? " · " + S.me.label : "");
+    }
+  }
+
+  if (S.pinConfigured && (!S.me || S.me.role === "admin")) {
+    try {
+      const sessions = await api("/api/auth/sessions");
+      const tbody = document.querySelector("#sessionsTable tbody");
+      tbody.innerHTML = sessions.map((r) => {
+        const role = (r.role || "admin").toLowerCase();
+        return `<tr>
+          <td><code>${esc(r.id)}</code></td>
+          <td>${esc(r.label || "")}</td>
+          <td><span class="role-badge ${role}">${esc(role)}</span></td>
+          <td class="muted">${esc(r.ip || "")}</td>
+          <td class="muted">${fmt(r.lastSeenAt)}</td>
+          <td class="muted">${r.expiresAt ? fmt(r.expiresAt) : "—"}</td>
+          <td>${r.active ? `<button onclick='revokeSess("${esc(r.id)}")'>Revoke</button>` : `<span class="muted">revoked</span>`}</td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="7" class="muted">No sessions.</td></tr>`;
+    } catch {
+      document.querySelector("#sessionsTable tbody").innerHTML = `<tr><td colspan="7" class="muted">You do not have permission to view sessions.</td></tr>`;
+    }
+  } else if (!S.pinConfigured) {
+    document.querySelector("#sessionsTable tbody").innerHTML = `<tr><td colspan="7" class="muted">Sessions unavailable in open mode.</td></tr>`;
+  } else {
+    document.querySelector("#sessionsTable tbody").innerHTML = `<tr><td colspan="7" class="muted">Admin role required.</td></tr>`;
+  }
+
+  // Pull settings + populate Notifications and AI Provider cards.
+  try {
+    const cfg = await api("/api/settings");
+    populateSettingsForm(cfg);
+  } catch {
+    // viewer role can't read settings — ignore silently.
+  }
+  applyRoleGating();
+}
+
+function populateSettingsForm(cfg) {
+  const get = (k, d) => (cfg && Object.prototype.hasOwnProperty.call(cfg, k) ? cfg[k] : d);
+  const set = (id, v) => { const el = document.getElementById(id); if (el != null) {
+    if (el.type === "checkbox") el.checked = !!v;
+    else el.value = v == null ? "" : v;
+  }};
+  set("ntfEnabled",    get("notifications.enabled", false));
+  set("ntfKind",       get("notifications.webhookKind", "generic"));
+  set("ntfMin",        get("notifications.minSeverity", "high"));
+  set("ntfUrl",        get("notifications.webhookUrl", ""));
+  set("aiProvider",    get("ai.provider", "auto"));
+  set("aiOpenAiKey",   ""); // never preload secret
+  set("aiOpenAiModel", get("ai.openaiModel", "gpt-5.3-codex"));
+  set("aiOllamaUrl",   get("ai.ollamaUrl", "http://127.0.0.1:11434/api/chat"));
+  set("aiOllamaModel", get("ai.ollamaModel", "llama3.1:8b"));
+  // Hint the user when a key is already on file
+  const keyEl = document.getElementById("aiOpenAiKey");
+  if (keyEl) {
+    keyEl.placeholder = cfg && cfg["ai.openaiApiKeyConfigured"]
+      ? "•••••••• (key on file — leave blank to keep)"
+      : "leave blank to keep current";
+  }
+}
+
+function applyRoleGating() {
+  // Hide buttons the current role can't use. Server still enforces this —
+  // hiding is purely cosmetic to keep the UI honest.
+  const role = (S.me && S.me.role) || "admin";
+  const minRank = { admin: 40, operator: 30, auditor: 20, viewer: 10 }[role] || 10;
+  const RULES = [
+    // selector, minRank required
+    ["#delegateBtn",  40], ["#pinSetBtn", 40], ["#pinClearBtn", 40],
+    ["#ntfSave",      40], ["#ntfTest",   40],
+    ["#aiSave",       40], ["#aiTest",    40],
+  ];
+  for (const [sel, need] of RULES) {
+    document.querySelectorAll(sel).forEach((el) => { el.disabled = minRank < need; });
+  }
+  // Sidebar badge
+  const sb = document.getElementById("sidebarRoleBadge");
+  if (sb) {
+    sb.style.display = "";
+    sb.className = "role-badge " + role;
+    sb.textContent = "role: " + role;
+  }
+}
+window.revokeSess = async function (id) {
+  if (!confirm("Revoke session " + id + "?")) return;
+  await api("/api/auth/sessions/" + id + "/revoke", { method: "POST" });
+  toast("Revoked", "ok"); loadSettings();
+};
+
+// ─── THEME (Light + Dark, Dark default; persisted in localStorage) ───────────
+function getCurrentTheme() {
+  return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+}
+function setTheme(name) {
+  const t = name === "light" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", t);
+  try { localStorage.setItem("secureloop.theme", t); } catch (e) { /* private mode */ }
+  document.querySelectorAll("#themeToggle .seg-btn").forEach((b) => {
+    b.classList.toggle("active", b.getAttribute("data-theme-set") === t);
+  });
+}
+document.querySelectorAll("#themeToggle .seg-btn").forEach((b) => {
+  b.addEventListener("click", () => setTheme(b.getAttribute("data-theme-set")));
+});
+// Reflect current theme on first paint
+setTheme(getCurrentTheme());
+document.getElementById("pinSetBtn").addEventListener("click", async () => {
+  const pin = document.getElementById("pinNew").value;
+  if ((pin || "").length < 4) return toast("PIN must be ≥4 characters", "err");
+  try {
+    await api("/api/auth/set-pin", { method: "POST", body: JSON.stringify({ pin }) });
+    toast("PIN set. You'll be asked to unlock next time.", "ok");
+    document.getElementById("pinNew").value = "";
+    S.pinConfigured = true;
+    document.getElementById("firstRunBanner").classList.add("hidden");
+    loadSettings();
+  } catch (e) { toast(e.message, "err"); }
+});
+document.getElementById("pinClearBtn").addEventListener("click", async () => {
+  if (!confirm("Clear the dashboard PIN? The dashboard will be open to any local user.")) return;
+  try {
+    await api("/api/auth/clear-pin", { method: "POST" });
+    toast("PIN cleared", "ok");
+    S.token = null; localStorage.removeItem("secureloop_token");
+    location.reload();
+  } catch (e) { toast(e.message, "err"); }
+});
+
+// ─── ROLES & ACCESS ──────────────────────────────────────────────────────────
+document.getElementById("delegateBtn").addEventListener("click", async () => {
+  const role  = document.getElementById("delegateRole").value;
+  const label = document.getElementById("delegateLabel").value || (role + "-token");
+  const ttlHours = Math.max(1, Math.min(720, Number(document.getElementById("delegateTtl").value || 24)));
+  try {
+    const r = await api("/api/auth/sessions/delegate", {
+      method: "POST",
+      body: JSON.stringify({ role, label, ttlHours }),
+    });
+    const box = document.getElementById("delegateResult");
+    box.classList.remove("hidden");
+    box.innerHTML = `
+      <strong>Token issued — copy it now. It will not be shown again.</strong>
+      <div style="margin-top:6px"><code style="word-break:break-all">${esc(r.token)}</code></div>
+      <div class="muted" style="margin-top:6px">Role: <span class="role-badge ${esc(r.role)}">${esc(r.role)}</span> · Expires ${esc(r.expiresAt || "")}</div>
+      <div class="row" style="margin-top:8px">
+        <button onclick="navigator.clipboard.writeText('${esc(r.token)}').then(()=>toast('Copied','ok'))">Copy to clipboard</button>
+      </div>
+    `;
+    document.getElementById("delegateLabel").value = "";
+    loadSettings();
+    toast("Delegated session token issued", "ok");
+  } catch (e) { toast(e.message, "err"); }
+});
+
+// ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+document.getElementById("ntfSave").addEventListener("click", async () => {
+  const patch = {
+    "notifications.enabled":     document.getElementById("ntfEnabled").checked,
+    "notifications.webhookKind": document.getElementById("ntfKind").value,
+    "notifications.minSeverity": document.getElementById("ntfMin").value,
+    "notifications.webhookUrl":  document.getElementById("ntfUrl").value.trim(),
+  };
+  try {
+    await api("/api/settings", { method: "POST", body: JSON.stringify(patch) });
+    document.getElementById("ntfStatus").textContent = "Saved.";
+    toast("Notifications saved", "ok");
+  } catch (e) { toast(e.message, "err"); }
+});
+document.getElementById("ntfTest").addEventListener("click", async () => {
+  const url  = document.getElementById("ntfUrl").value.trim();
+  const kind = document.getElementById("ntfKind").value;
+  const status = document.getElementById("ntfStatus");
+  status.textContent = "Sending…";
+  try {
+    const r = await api("/api/settings/notifications/test", {
+      method: "POST", body: JSON.stringify({ url, kind }),
+    });
+    status.textContent = "Test ping sent (HTTP " + r.status + ").";
+    toast("Test webhook sent", "ok");
+  } catch (e) { status.textContent = "Failed: " + e.message; toast(e.message, "err"); }
+});
+
+// ─── AI PROVIDER ─────────────────────────────────────────────────────────────
+document.getElementById("aiSave").addEventListener("click", async () => {
+  const patch = {
+    "ai.provider":      document.getElementById("aiProvider").value,
+    "ai.openaiModel":   document.getElementById("aiOpenAiModel").value.trim(),
+    "ai.ollamaUrl":     document.getElementById("aiOllamaUrl").value.trim(),
+    "ai.ollamaModel":   document.getElementById("aiOllamaModel").value.trim(),
+  };
+  const newKey = document.getElementById("aiOpenAiKey").value;
+  if (newKey) patch["ai.openaiApiKey"] = newKey;
+  try {
+    await api("/api/settings", { method: "POST", body: JSON.stringify(patch) });
+    document.getElementById("aiOpenAiKey").value = "";
+    document.getElementById("aiStatus").textContent = "Saved.";
+    toast("AI provider saved", "ok");
+  } catch (e) { toast(e.message, "err"); }
+});
+document.getElementById("aiTest").addEventListener("click", async () => {
+  const status = document.getElementById("aiStatus");
+  status.textContent = "Probing…";
+  try {
+    const r = await api("/api/settings/ai/test", { method: "POST" });
+    status.textContent = (r.ok ? "OK" : "FAIL") + " · " + r.target + " · " + r.detail;
+    toast(r.ok ? "Provider reachable" : "Provider unreachable", r.ok ? "ok" : "err");
+  } catch (e) { status.textContent = "Failed: " + e.message; toast(e.message, "err"); }
+});
+
+// ─── DATA RETENTION & EXPORT ─────────────────────────────────────────────────
+document.getElementById("exportAllBtn").addEventListener("click", () => downloadExport("/api/export/all"));
+
+// In-card view-link shortcuts (used by the retention card hints)
+document.querySelectorAll("[data-view-link]").forEach((a) => {
+  a.addEventListener("click", (e) => {
+    e.preventDefault();
+    const view = a.getAttribute("data-view-link");
+    const btn = document.querySelector(`#nav button[data-view="${view}"]`);
+    if (btn) btn.click();
+  });
+});
+
+function openDrawer(title, bodyHtml, footHtml) {
+  document.getElementById("drawerTitle").textContent = title;
+  document.getElementById("drawerBody").innerHTML = bodyHtml;
+  document.getElementById("drawerFoot").innerHTML = footHtml || "";
+  document.getElementById("drawer").setAttribute("aria-hidden", "false");
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("drawerBackdrop").classList.add("open");
+}
+function closeDrawer() {
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("drawerBackdrop").classList.remove("open");
+  document.getElementById("drawer").setAttribute("aria-hidden", "true");
+  document.getElementById("drawerTitle").textContent = "Details";
+  document.getElementById("drawerBody").innerHTML = "";
+  document.getElementById("drawerFoot").innerHTML = "";
+}
+document.getElementById("drawerClose").addEventListener("click", closeDrawer);
+document.getElementById("drawerBackdrop").addEventListener("click", closeDrawer);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+
+function esc(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function fmt(dt) { if (!dt) return ""; try { return new Date(dt).toLocaleString(); } catch { return dt; } }
+
+bootAuth().then(loadCurrentView).catch((e) => toast(e.message, "err"));
+</script>
+
+</body>
+</html>
